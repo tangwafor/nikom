@@ -40,7 +40,7 @@ const rules = [
   { title: 'Vision', text: 'Create the most formidable financial hub for our people!', icon: '🌱' },
   { title: 'Unity', text: 'Rally to support each other succeed.', icon: '🤝' },
   { title: 'Culture', text: 'Learn and uphold our Mankon culture.', icon: '🏛️' },
-  { title: 'Group Njangi', text: 'Pay $1,000 to your GROUP\'s beneficiary.', icon: '💰', amount: '$1,000' },
+  { title: 'Group Njangi', text: 'ALL members pay $1,000 (including beneficiary to receive full amount).', icon: '💰', amount: '$1,000' },
   { title: 'Savings Fund', text: 'EVERYONE contributes $100 to savings.', icon: '🏦', amount: '$100' },
   { title: 'Host Fee', text: 'EVERYONE gives $20 to the host.', icon: '🍽️', amount: '$20' },
   { title: 'Meeting Time', text: '3pm to 6pm prompt.', icon: '⏰' },
@@ -70,6 +70,16 @@ const CARPOOL_AREAS = [
   { id: 'annapolis', name: 'Annapolis', icon: '⚓' },
   { id: 'dc', name: 'Washington DC', icon: '🏛️' },
   { id: 'other', name: 'Other Area', icon: '📍' },
+];
+
+const PAYMENT_METHODS = [
+  { id: 'zelle', name: 'Zelle', icon: '💸', color: '#6D1ED4' },
+  { id: 'cashapp', name: 'Cash App', icon: '💵', color: '#00D632' },
+  { id: 'venmo', name: 'Venmo', icon: '💳', color: '#3D95CE' },
+  { id: 'paypal', name: 'PayPal', icon: '🅿️', color: '#003087' },
+  { id: 'applepay', name: 'Apple Pay', icon: '🍎', color: '#000000' },
+  { id: 'cash', name: 'Cash', icon: '💰', color: '#2E7D32' },
+  { id: 'check', name: 'Check', icon: '📝', color: '#795548' },
 ];
 
 // =====================================================
@@ -204,6 +214,12 @@ export default function NikomNiMankon() {
   const [memberLocations, setMemberLocations] = useState({});
   const [carpoolOffers, setCarpoolOffers] = useState({});
   const [carpoolRequests, setCarpoolRequests] = useState({});
+  const [hostingLocations, setHostingLocations] = useState({});
+  const [paymentMethods, setPaymentMethods] = useState({});
+  const [showHostingModal, setShowHostingModal] = useState(false);
+  const [editingHosting, setEditingHosting] = useState({ meetingIdx: 0, address: '', city: '', state: 'MD', zip: '', notes: '', time: '3:00 PM' });
+  const [showPaymentMethodsModal, setShowPaymentMethodsModal] = useState(false);
+  const [selectedPaymentMember, setSelectedPaymentMember] = useState({ groupIdx: 0, memberIdx: 0 });
 
   // Settings
   const [visibility, setVisibility] = useState({ njangi: false, savings: false, hostFee: false });
@@ -273,6 +289,8 @@ export default function NikomNiMankon() {
         if (data.memberLocations) setMemberLocations(data.memberLocations);
         if (data.carpoolOffers) setCarpoolOffers(data.carpoolOffers);
         if (data.carpoolRequests) setCarpoolRequests(data.carpoolRequests);
+        if (data.hostingLocations) setHostingLocations(data.hostingLocations);
+        if (data.paymentMethods) setPaymentMethods(data.paymentMethods);
         if (data.beneficiaryOverrides) setBeneficiaryOverrides(data.beneficiaryOverrides);
         if (data.meetingNotes) setMeetingNotes(data.meetingNotes);
         if (data.groups) setGroups(data.groups);
@@ -288,17 +306,32 @@ export default function NikomNiMankon() {
       const data = { 
         adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, 
         attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, 
-        memberLocations, carpoolOffers, carpoolRequests, beneficiaryOverrides, 
-        meetingNotes, groups, isAdmin, visibility 
+        memberLocations, carpoolOffers, carpoolRequests, hostingLocations, paymentMethods,
+        beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility 
       };
       localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
     }
-  }, [adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, memberLocations, carpoolOffers, carpoolRequests, beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility, isLoading]);
+  }, [adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, memberLocations, carpoolOffers, carpoolRequests, hostingLocations, paymentMethods, beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility, isLoading]);
 
   // =====================================================
   // AUTH FUNCTIONS WITH PHONE RECOVERY
   // =====================================================
+  // Master reset password - ALWAYS works for emergency access
+  const MASTER_PASSWORD = 'tatechsolutions2026';
+  
   const handleLogin = () => {
+    // Check for master password (emergency reset)
+    if (passwordInput === MASTER_PASSWORD) {
+      setAdminPassword('nikom2026'); // Reset to default
+      setIsAdmin(true); 
+      setShowLoginModal(false); 
+      setPasswordInput(''); 
+      setLoginError(''); 
+      triggerConfetti();
+      alert('🔓 Master reset! Password has been reset to: nikom2026\n\nPlease change it in Settings.');
+      return;
+    }
+    
     if (passwordInput === adminPassword) {
       setIsAdmin(true); 
       setShowLoginModal(false); 
@@ -574,6 +607,61 @@ export default function NikomNiMankon() {
   const getCarpoolOffer = (meetingIdx, groupIdx, memberIdx) => carpoolOffers[`${meetingIdx}-${groupIdx}-${memberIdx}`];
   const getCarpoolRequest = (meetingIdx, groupIdx, memberIdx) => carpoolRequests[`${meetingIdx}-${groupIdx}-${memberIdx}`];
 
+  // =====================================================
+  // HOSTING LOCATION FUNCTIONS
+  // =====================================================
+  const getHostingLocation = (meetingIdx) => hostingLocations[meetingIdx] || null;
+  
+  const saveHostingLocation = () => {
+    setHostingLocations(prev => ({
+      ...prev,
+      [editingHosting.meetingIdx]: {
+        address: editingHosting.address,
+        city: editingHosting.city,
+        state: editingHosting.state,
+        zip: editingHosting.zip,
+        notes: editingHosting.notes,
+        time: editingHosting.time
+      }
+    }));
+    setShowHostingModal(false);
+    triggerConfetti();
+  };
+
+  const openHostingModal = (meetingIdx) => {
+    const existing = getHostingLocation(meetingIdx);
+    setEditingHosting({
+      meetingIdx,
+      address: existing?.address || '',
+      city: existing?.city || meetings[meetingIdx]?.city?.split(',')[0] || '',
+      state: existing?.state || 'MD',
+      zip: existing?.zip || '',
+      notes: existing?.notes || '',
+      time: existing?.time || '3:00 PM'
+    });
+    setShowHostingModal(true);
+  };
+
+  // =====================================================
+  // PAYMENT METHODS FUNCTIONS
+  // =====================================================
+  const getMemberPaymentMethods = (groupIdx, memberIdx) => paymentMethods[`${groupIdx}-${memberIdx}`] || [];
+  
+  const saveMemberPaymentMethod = (method, handle) => {
+    const key = `${selectedPaymentMember.groupIdx}-${selectedPaymentMember.memberIdx}`;
+    const existing = getMemberPaymentMethods(selectedPaymentMember.groupIdx, selectedPaymentMember.memberIdx);
+    const updated = existing.filter(p => p.method !== method);
+    if (handle.trim()) {
+      updated.push({ method, handle: handle.trim() });
+    }
+    setPaymentMethods(prev => ({ ...prev, [key]: updated }));
+  };
+
+  const openPaymentMethodsModal = (groupIdx, memberIdx) => {
+    setSelectedPaymentMember({ groupIdx, memberIdx });
+    setShowPaymentMethodsModal(true);
+  };
+
   const getCarpoolMatches = (meetingIdx) => {
     const offers = [];
     const requests = [];
@@ -603,7 +691,15 @@ export default function NikomNiMankon() {
     if (!group) return { njangiPaid: 0, njangiTotal: 0, njangiCollected: 0, njangiTarget: 0, njangiPercentage: 0 };
     let njangiPaid = 0;
     group.members.forEach((_, mIdx) => { if (njangiPayments[`${meetingIdx}-${groupIdx}-${mIdx}`]) njangiPaid++; });
-    return { njangiPaid, njangiTotal: group.members.length, njangiCollected: njangiPaid * 1000, njangiTarget: group.members.length * 1000, njangiPercentage: Math.round((njangiPaid / group.members.length) * 100) };
+    // All members pay including beneficiary (beneficiary pays to themselves)
+    const totalMembers = group.members.length;
+    return { 
+      njangiPaid, 
+      njangiTotal: totalMembers, 
+      njangiCollected: njangiPaid * 1000, 
+      njangiTarget: totalMembers * 1000, 
+      njangiPercentage: Math.round((njangiPaid / totalMembers) * 100) 
+    };
   };
 
   const getMeetingHostFeeStats = (meetingIdx) => {
@@ -696,18 +792,53 @@ export default function NikomNiMankon() {
 
   const generateMessage = (type) => {
     const meeting = meetings[selectedMeeting];
-    let msg = `🌴 *NIKOM NI MANKON* 🌴\n📅 *${meeting.full}*\n🏠 Host: ${meeting.host}\n📍 ${meeting.city}\n\n`;
+    const hostLoc = getHostingLocation(selectedMeeting);
+    
+    let msg = `🌴 *NIKOM NI MANKON* 🌴\n📅 *${meeting.full}*\n🏠 Host: ${meeting.host}\n`;
+    
+    // Add location details if set
+    if (hostLoc?.address) {
+      msg += `\n📍 *LOCATION*\n${hostLoc.address}\n${hostLoc.city}, ${hostLoc.state} ${hostLoc.zip}\n`;
+      if (hostLoc.time) msg += `⏰ Time: ${hostLoc.time}\n`;
+      if (hostLoc.notes) msg += `📝 ${hostLoc.notes}\n`;
+    } else {
+      msg += `📍 ${meeting.city}\n`;
+    }
+    
+    msg += `\n`;
     
     if (type === 'summary') {
       msg += `💰 *PAYMENT STATUS*\n\n`;
       groups.forEach((g, gIdx) => {
         const ben = getBeneficiary(gIdx, selectedMeeting);
         const stats = getGroupMeetingStats(selectedMeeting, gIdx);
-        msg += `*${g.name}*\n⭐ ${ben.name}\n✅ ${stats.njangiPaid}/${stats.njangiTotal-1} paid ($${stats.njangiCollected.toLocaleString()})\n\n`;
+        const payMethods = getMemberPaymentMethods(gIdx, ben.index);
+        msg += `*${g.name}*\n⭐ Beneficiary: ${ben.name}\n✅ ${stats.njangiPaid}/${stats.njangiTotal} paid ($${stats.njangiCollected.toLocaleString()})\n`;
+        
+        // Add payment methods for beneficiary
+        if (payMethods.length > 0) {
+          msg += `💳 Pay via: `;
+          msg += payMethods.map(pm => {
+            const method = PAYMENT_METHODS.find(m => m.id === pm.method);
+            return `${method?.name} (${pm.handle})`;
+          }).join(', ');
+          msg += `\n`;
+        }
+        msg += `\n`;
       });
     } else {
-      msg += `💵 *CONTRIBUTIONS*\n• $1,000 Njangi\n• $100 Savings\n• $20 Host Fee\n\n⭐ *BENEFICIARIES*\n`;
-      groups.forEach((g, gIdx) => { msg += `• ${g.name}: ${getBeneficiary(gIdx, selectedMeeting).name}\n`; });
+      msg += `💵 *CONTRIBUTIONS*\n• $1,000 Njangi (ALL members including beneficiary)\n• $100 Savings\n• $20 Host Fee\n\n⭐ *BENEFICIARIES & PAYMENT INFO*\n`;
+      groups.forEach((g, gIdx) => { 
+        const ben = getBeneficiary(gIdx, selectedMeeting);
+        const payMethods = getMemberPaymentMethods(gIdx, ben.index);
+        msg += `\n*${g.name}*: ${ben.name}\n`;
+        if (payMethods.length > 0) {
+          payMethods.forEach(pm => {
+            const method = PAYMENT_METHODS.find(m => m.id === pm.method);
+            msg += `  ${method?.icon} ${method?.name}: ${pm.handle}\n`;
+          });
+        }
+      });
     }
     msg += `\n🌿 _Growing together!_ 🌿\n\n_Powered by TA-TECHSOLUTIONS_\n📞 (571) 447-2698`;
     return msg;
@@ -914,6 +1045,43 @@ export default function NikomNiMankon() {
               </div>
             )}
 
+            {/* Payment Methods Section */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs text-gray-500">💳 Payment Methods</label>
+                {isAdmin && (
+                  <button 
+                    onClick={() => { setShowMemberModal(false); openPaymentMethodsModal(selectedMember.groupIdx, selectedMember.memberIdx); }}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                  >
+                    ✏️ Edit
+                  </button>
+                )}
+              </div>
+              {(() => {
+                const payMethods = getMemberPaymentMethods(selectedMember.groupIdx, selectedMember.memberIdx);
+                if (payMethods.length > 0) {
+                  return (
+                    <div className="space-y-2">
+                      {payMethods.map((pm, idx) => {
+                        const method = PAYMENT_METHODS.find(m => m.id === pm.method);
+                        return (
+                          <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                            <span className="text-lg">{method?.icon}</span>
+                            <span className="text-sm font-medium text-gray-700">{method?.name}:</span>
+                            <span className="text-sm text-gray-600">{pm.handle}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+                return (
+                  <p className="text-xs text-gray-400 italic">No payment methods set</p>
+                );
+              })()}
+            </div>
+
             <button onClick={() => setShowMemberModal(false)} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
           </GlassCard>
         </div>
@@ -1058,6 +1226,134 @@ export default function NikomNiMankon() {
             })()}
             
             <button onClick={() => setShowCarpoolModal(false)} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Hosting Location Modal */}
+      {showHostingModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-md" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">📍 Meeting Location</h3>
+            <p className="text-gray-500 text-sm mb-4">{meetings[editingHosting.meetingIdx]?.full} - {meetings[editingHosting.meetingIdx]?.host}</p>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">🏠 Street Address</label>
+                <input 
+                  type="text" 
+                  value={editingHosting.address} 
+                  onChange={(e) => setEditingHosting({...editingHosting, address: e.target.value})} 
+                  placeholder="123 Main Street"
+                  className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm"
+                />
+              </div>
+              
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-1">
+                  <label className="text-xs text-gray-500 mb-1 block">City</label>
+                  <input 
+                    type="text" 
+                    value={editingHosting.city} 
+                    onChange={(e) => setEditingHosting({...editingHosting, city: e.target.value})} 
+                    placeholder="Baltimore"
+                    className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">State</label>
+                  <input 
+                    type="text" 
+                    value={editingHosting.state} 
+                    onChange={(e) => setEditingHosting({...editingHosting, state: e.target.value})} 
+                    placeholder="MD"
+                    className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">ZIP</label>
+                  <input 
+                    type="text" 
+                    value={editingHosting.zip} 
+                    onChange={(e) => setEditingHosting({...editingHosting, zip: e.target.value})} 
+                    placeholder="21201"
+                    className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">⏰ Meeting Time</label>
+                <input 
+                  type="text" 
+                  value={editingHosting.time} 
+                  onChange={(e) => setEditingHosting({...editingHosting, time: e.target.value})} 
+                  placeholder="3:00 PM"
+                  className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">📝 Additional Notes (parking, gate code, etc.)</label>
+                <textarea 
+                  value={editingHosting.notes} 
+                  onChange={(e) => setEditingHosting({...editingHosting, notes: e.target.value})} 
+                  placeholder="Park in the driveway. Gate code: 1234. Ring doorbell."
+                  rows={3}
+                  className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm resize-none"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-2 mt-4">
+              <button onClick={saveHostingLocation} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-xl font-bold transition-all">💾 Save Location</button>
+              <button onClick={() => setShowHostingModal(false)} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl transition-all">Cancel</button>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Payment Methods Modal */}
+      {showPaymentMethodsModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" gradient>
+            <div className="text-center mb-4">
+              <MemberAvatar 
+                name={groups[selectedPaymentMember.groupIdx]?.members[selectedPaymentMember.memberIdx] || ''} 
+                photo={getMemberPhoto(selectedPaymentMember.groupIdx, selectedPaymentMember.memberIdx)}
+                size="lg"
+                color={groups[selectedPaymentMember.groupIdx]?.color}
+              />
+              <h3 className="text-xl font-bold text-gray-800 mt-3">{groups[selectedPaymentMember.groupIdx]?.members[selectedPaymentMember.memberIdx]}</h3>
+              <p className="text-gray-500 text-sm">Payment Methods</p>
+            </div>
+            
+            <div className="space-y-3">
+              {PAYMENT_METHODS.map((method) => {
+                const existing = getMemberPaymentMethods(selectedPaymentMember.groupIdx, selectedPaymentMember.memberIdx).find(p => p.method === method.id);
+                return (
+                  <div key={method.id} className="flex items-center gap-3 p-3 rounded-xl border-2" style={{ borderColor: existing ? method.color : '#e5e7eb', backgroundColor: existing ? method.color + '10' : 'white' }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ backgroundColor: method.color + '20' }}>
+                      {method.icon}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-800 text-sm">{method.name}</p>
+                      <input 
+                        type="text" 
+                        defaultValue={existing?.handle || ''} 
+                        onBlur={(e) => saveMemberPaymentMethod(method.id, e.target.value)}
+                        placeholder={method.id === 'cash' ? 'Accepts cash ✓' : method.id === 'check' ? 'Accepts checks ✓' : `@username or phone/email`}
+                        className="w-full px-2 py-1 rounded-lg border border-gray-200 focus:border-gray-400 focus:outline-none text-xs mt-1"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            <p className="text-xs text-gray-400 text-center mt-4">Fill in payment handles to show how this member can receive payments</p>
+            
+            <button onClick={() => setShowPaymentMethodsModal(false)} className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Done</button>
           </GlassCard>
         </div>
       )}
@@ -1274,8 +1570,29 @@ export default function NikomNiMankon() {
                     </div>
                     <h3 className="text-xl md:text-2xl font-bold">🗓️ {meetings[0]?.full}</h3>
                     <p className="text-emerald-100 text-sm mt-1">🏠 {meetings[0]?.host} • 📍 {meetings[0]?.city}</p>
+                    
+                    {/* Show hosting location if set */}
+                    {(() => {
+                      const loc = getHostingLocation(0);
+                      if (loc?.address) {
+                        return (
+                          <div className="mt-2 bg-white/10 backdrop-blur rounded-lg px-3 py-2 text-sm">
+                            <p className="font-medium">📍 {loc.address}</p>
+                            <p className="text-emerald-200 text-xs">{loc.city}, {loc.state} {loc.zip}</p>
+                            {loc.time && <p className="text-emerald-200 text-xs">⏰ {loc.time}</p>}
+                            {loc.notes && <p className="text-emerald-200 text-xs mt-1">📝 {loc.notes}</p>}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
-                  <button onClick={() => openWhatsApp('reminder')} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl font-medium transition-all">📱 Share</button>
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => openWhatsApp('reminder')} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl font-medium transition-all">📱 Share</button>
+                    {isAdmin && (
+                      <button onClick={() => openHostingModal(0)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl font-medium transition-all text-sm">📍 Set Location</button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="p-5">
@@ -1287,6 +1604,7 @@ export default function NikomNiMankon() {
                   {groups.map((group, gIdx) => {
                     const beneficiary = getBeneficiary(gIdx, 0);
                     const stats = getGroupMeetingStats(0, gIdx);
+                    const payMethods = getMemberPaymentMethods(gIdx, beneficiary.index);
                     return (
                       <div 
                         key={gIdx} 
@@ -1303,6 +1621,16 @@ export default function NikomNiMankon() {
                           <p className="font-bold text-gray-800 text-sm truncate flex-1">{beneficiary.name.split(' ')[0]}</p>
                         </div>
                         <ProgressRing progress={stats.njangiPercentage} size={50} strokeWidth={5} color={group.color} />
+                        {/* Show payment methods icons */}
+                        {payMethods.length > 0 && (
+                          <div className="flex gap-1 mt-2 flex-wrap">
+                            {payMethods.slice(0, 3).map((pm, idx) => {
+                              const method = PAYMENT_METHODS.find(m => m.id === pm.method);
+                              return <span key={idx} className="text-xs" title={`${method?.name}: ${pm.handle}`}>{method?.icon}</span>;
+                            })}
+                            {payMethods.length > 3 && <span className="text-xs text-gray-400">+{payMethods.length - 3}</span>}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -1513,16 +1841,51 @@ export default function NikomNiMankon() {
                             <MemberAvatar name={beneficiary.name} photo={getMemberPhoto(selectedGroup, beneficiary.index)} size="md" color="#fff" />
                             <div>
                               <p className="font-bold text-lg">{beneficiary.name}</p>
-                              {isAdmin && (
-                                <button 
-                                  onClick={() => openBeneficiaryModal(selectedMeeting, selectedGroup)} 
-                                  className="text-xs text-white/80 underline hover:text-white"
-                                >
-                                  🔄 Change
-                                </button>
-                              )}
+                              <div className="flex gap-2 mt-1">
+                                {isAdmin && (
+                                  <button 
+                                    onClick={() => openBeneficiaryModal(selectedMeeting, selectedGroup)} 
+                                    className="text-xs text-white/80 underline hover:text-white"
+                                  >
+                                    🔄 Change
+                                  </button>
+                                )}
+                                {isAdmin && (
+                                  <button 
+                                    onClick={() => openPaymentMethodsModal(selectedGroup, beneficiary.index)} 
+                                    className="text-xs text-white/80 underline hover:text-white"
+                                  >
+                                    💳 Payment Info
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          {/* Show payment methods */}
+                          {(() => {
+                            const payMethods = getMemberPaymentMethods(selectedGroup, beneficiary.index);
+                            if (payMethods.length > 0) {
+                              return (
+                                <div className="mt-3 pt-3 border-t border-white/20">
+                                  <p className="text-white/60 text-xs mb-2">💳 Pay via:</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {payMethods.map((pm, idx) => {
+                                      const method = PAYMENT_METHODS.find(m => m.id === pm.method);
+                                      return (
+                                        <div key={idx} className="bg-white/20 rounded-lg px-2 py-1 text-xs">
+                                          <span>{method?.icon} {method?.name}</span>
+                                          <span className="text-white/80 ml-1">({pm.handle})</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return isAdmin ? (
+                              <p className="text-white/60 text-xs mt-2">💡 Add payment methods so members know how to pay</p>
+                            ) : null;
+                          })()}
                         </div>
                       </div>
                       <div className="text-center bg-white/20 backdrop-blur rounded-xl p-4">
@@ -1560,7 +1923,12 @@ export default function NikomNiMankon() {
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                   {isBeneficiary ? (
-                                    <span className="bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 px-4 py-2 rounded-xl text-sm font-bold inline-block">💎 RECEIVES</span>
+                                    <div className="flex items-center justify-center gap-2">
+                                      <button onClick={() => toggleNjangi(selectedMeeting, selectedGroup, mIdx)} disabled={!isAdmin} className={`w-24 py-2 rounded-xl font-bold text-sm transition-all hover:scale-105 ${isPaid ? 'text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'} ${!isAdmin && 'opacity-70 cursor-not-allowed'}`} style={isPaid ? { backgroundColor: group.color } : {}}>
+                                        {isPaid ? '✓ PAID' : '$1,000'}
+                                      </button>
+                                      <span className="bg-gradient-to-r from-yellow-400 to-amber-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full">⭐</span>
+                                    </div>
                                   ) : (
                                     <button onClick={() => toggleNjangi(selectedMeeting, selectedGroup, mIdx)} disabled={!isAdmin} className={`w-24 py-2 rounded-xl font-bold text-sm transition-all hover:scale-105 ${isPaid ? 'text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'} ${!isAdmin && 'opacity-70 cursor-not-allowed'}`} style={isPaid ? { backgroundColor: group.color } : {}}>
                                       {isPaid ? '✓ PAID' : '$1,000'}
@@ -1756,6 +2124,7 @@ export default function NikomNiMankon() {
             {meetings.map((meeting, idx) => {
               const hStats = getMeetingHostFeeStats(idx);
               const aStats = getMeetingAttendanceStats(idx);
+              const hostLoc = getHostingLocation(idx);
               return (
                 <GlassCard key={idx} className={`overflow-hidden shadow-lg transition-all hover:-translate-y-1 ${idx === 0 ? 'ring-2 ring-emerald-400 ring-offset-2' : ''}`}>
                   <div className={`p-4 flex items-center justify-between ${idx === 0 ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : 'bg-gray-50'}`}>
@@ -1763,10 +2132,33 @@ export default function NikomNiMankon() {
                       <span className={`text-xs font-bold ${idx === 0 ? 'text-emerald-100' : 'text-gray-500'}`}>Meeting #{idx + 1}</span>
                       <p className={`font-bold text-lg ${idx === 0 ? 'text-white' : 'text-gray-800'}`}>{meeting.full}</p>
                     </div>
-                    {idx === 0 && <span className="bg-white text-emerald-600 text-xs font-bold px-3 py-1 rounded-full animate-pulse">🔥 NEXT</span>}
+                    <div className="flex items-center gap-2">
+                      {idx === 0 && <span className="bg-white text-emerald-600 text-xs font-bold px-3 py-1 rounded-full animate-pulse">🔥 NEXT</span>}
+                      {isAdmin && (
+                        <button 
+                          onClick={() => openHostingModal(idx)} 
+                          className={`text-xs px-3 py-1 rounded-full transition-all ${idx === 0 ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
+                        >
+                          📍 Location
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="p-4">
-                    <p className="text-sm text-gray-600 mb-3">🏠 {meeting.host} • 📍 {meeting.city}</p>
+                    <p className="text-sm text-gray-600 mb-2">🏠 {meeting.host}</p>
+                    
+                    {/* Show location details if set */}
+                    {hostLoc?.address ? (
+                      <div className="bg-emerald-50 rounded-lg p-3 mb-3 text-sm">
+                        <p className="font-medium text-gray-800">📍 {hostLoc.address}</p>
+                        <p className="text-gray-600">{hostLoc.city}, {hostLoc.state} {hostLoc.zip}</p>
+                        {hostLoc.time && <p className="text-gray-500 text-xs mt-1">⏰ {hostLoc.time}</p>}
+                        {hostLoc.notes && <p className="text-gray-500 text-xs">📝 {hostLoc.notes}</p>}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 mb-3">📍 {meeting.city}</p>
+                    )}
+                    
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                       {groups.map((group, gIdx) => {
                         const beneficiary = getBeneficiary(gIdx, idx);
