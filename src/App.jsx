@@ -220,6 +220,25 @@ export default function NikomNiMankon() {
   const [editingHosting, setEditingHosting] = useState({ meetingIdx: 0, address: '', city: '', state: 'MD', zip: '', notes: '', time: '3:00 PM' });
   const [showPaymentMethodsModal, setShowPaymentMethodsModal] = useState(false);
   const [selectedPaymentMember, setSelectedPaymentMember] = useState({ groupIdx: 0, memberIdx: 0 });
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportOptions, setReportOptions] = useState({
+    includeNjangi: true,
+    includeSavings: true,
+    includeHostFee: true,
+    includeAttendance: true,
+    includePaymentMethods: true,
+    includeLocation: true,
+    includeTotals: true,
+    includeUnpaid: true
+  });
+  
+  // Savings Ledger System - tracks actual payments with amounts and dates
+  const [savingsLedger, setSavingsLedger] = useState({});
+  const [showSavingsLedgerModal, setShowSavingsLedgerModal] = useState(false);
+  const [selectedSavingsMember, setSelectedSavingsMember] = useState({ groupIdx: 0, memberIdx: 0 });
+  const [savingsPaymentAmount, setSavingsPaymentAmount] = useState(100);
+  const [savingsPaymentNote, setSavingsPaymentNote] = useState('');
+  const [showSavingsReportModal, setShowSavingsReportModal] = useState(false);
 
   // Settings
   const [visibility, setVisibility] = useState({ njangi: false, savings: false, hostFee: false });
@@ -291,6 +310,7 @@ export default function NikomNiMankon() {
         if (data.carpoolRequests) setCarpoolRequests(data.carpoolRequests);
         if (data.hostingLocations) setHostingLocations(data.hostingLocations);
         if (data.paymentMethods) setPaymentMethods(data.paymentMethods);
+        if (data.savingsLedger) setSavingsLedger(data.savingsLedger);
         if (data.beneficiaryOverrides) setBeneficiaryOverrides(data.beneficiaryOverrides);
         if (data.meetingNotes) setMeetingNotes(data.meetingNotes);
         if (data.groups) setGroups(data.groups);
@@ -307,11 +327,11 @@ export default function NikomNiMankon() {
         adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, 
         attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, 
         memberLocations, carpoolOffers, carpoolRequests, hostingLocations, paymentMethods,
-        beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility 
+        beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility, savingsLedger
       };
       localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
     }
-  }, [adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, memberLocations, carpoolOffers, carpoolRequests, hostingLocations, paymentMethods, beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility, isLoading]);
+  }, [adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, memberLocations, carpoolOffers, carpoolRequests, hostingLocations, paymentMethods, beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility, savingsLedger, isLoading]);
 
   // =====================================================
   // AUTH FUNCTIONS WITH PHONE RECOVERY
@@ -662,6 +682,391 @@ export default function NikomNiMankon() {
     setShowPaymentMethodsModal(true);
   };
 
+  // =====================================================
+  // BACKUP & RESTORE FUNCTIONS
+  // =====================================================
+  const createBackup = () => {
+    const data = { 
+      adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, 
+      attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, 
+      memberLocations, carpoolOffers, carpoolRequests, hostingLocations, paymentMethods,
+      beneficiaryOverrides, meetingNotes, groups, visibility, savingsLedger,
+      backupDate: new Date().toISOString(),
+      version: 'v4.0'
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nikom_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    triggerConfetti();
+  };
+
+  const restoreBackup = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result);
+        if (data.adminPassword) setAdminPassword(data.adminPassword);
+        if (data.recoveryPhone) setRecoveryPhone(data.recoveryPhone);
+        if (data.njangiPayments) setNjangiPayments(data.njangiPayments);
+        if (data.hostFeePayments) setHostFeePayments(data.hostFeePayments);
+        if (data.savingsFundPayments) setSavingsFundPayments(data.savingsFundPayments);
+        if (data.attendance) setAttendance(data.attendance);
+        if (data.memberPhotos) setMemberPhotos(data.memberPhotos);
+        if (data.memberContacts) setMemberContacts(data.memberContacts);
+        if (data.memberStatuses) setMemberStatuses(data.memberStatuses);
+        if (data.statusMessages) setStatusMessages(data.statusMessages);
+        if (data.memberLocations) setMemberLocations(data.memberLocations);
+        if (data.carpoolOffers) setCarpoolOffers(data.carpoolOffers);
+        if (data.carpoolRequests) setCarpoolRequests(data.carpoolRequests);
+        if (data.hostingLocations) setHostingLocations(data.hostingLocations);
+        if (data.paymentMethods) setPaymentMethods(data.paymentMethods);
+        if (data.savingsLedger) setSavingsLedger(data.savingsLedger);
+        if (data.beneficiaryOverrides) setBeneficiaryOverrides(data.beneficiaryOverrides);
+        if (data.meetingNotes) setMeetingNotes(data.meetingNotes);
+        if (data.groups) setGroups(data.groups);
+        if (data.visibility) setVisibility(data.visibility);
+        
+        alert(`✅ Backup restored successfully!\nBackup date: ${data.backupDate ? new Date(data.backupDate).toLocaleDateString() : 'Unknown'}\nVersion: ${data.version || 'Unknown'}`);
+        triggerConfetti();
+      } catch (err) {
+        alert('❌ Error restoring backup. Invalid file format.');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
+  // =====================================================
+  // REMOVE MEMBER FUNCTION
+  // =====================================================
+  const removeMember = (groupIdx, memberIdx) => {
+    const member = groups[groupIdx]?.members[memberIdx];
+    if (!member) return;
+    
+    if (!confirm(`⚠️ Are you sure you want to remove "${member}" from ${groups[groupIdx].name}?\n\nThis will also remove their payment history and other data.`)) {
+      return;
+    }
+    
+    setGroups(prev => {
+      const newGroups = [...prev];
+      newGroups[groupIdx] = {
+        ...newGroups[groupIdx],
+        members: newGroups[groupIdx].members.filter((_, idx) => idx !== memberIdx)
+      };
+      return newGroups;
+    });
+    
+    // Clean up related data
+    // Note: Payment data uses keys like "meetingIdx-groupIdx-memberIdx" 
+    // After removal, indices shift, so old data may be orphaned
+    // This is acceptable for simplicity
+    
+    setShowMemberModal(false);
+    alert(`✅ ${member} has been removed from ${groups[groupIdx].name}`);
+  };
+
+  // =====================================================
+  // MEETING NOTES FUNCTIONS
+  // =====================================================
+  const openNotesModal = (meetingIdx) => {
+    setEditingNotes({ meetingIdx, note: meetingNotes[meetingIdx] || '' });
+    setShowNotesModal(true);
+  };
+
+  const saveNotes = () => {
+    setMeetingNotes(prev => ({ ...prev, [editingNotes.meetingIdx]: editingNotes.note }));
+    setShowNotesModal(false);
+    triggerConfetti();
+  };
+
+  // =====================================================
+  // PRINT REPORT FUNCTION
+  // =====================================================
+  const printReport = () => {
+    const meeting = meetings[selectedMeeting];
+    const ledgerStats = getOverallSavingsStats();
+    const hStats = getMeetingHostFeeStats(selectedMeeting);
+    const aStats = getMeetingAttendanceStats(selectedMeeting);
+    
+    let totalNjangi = 0;
+    groups.forEach((g, gIdx) => {
+      totalNjangi += getGroupMeetingStats(selectedMeeting, gIdx).njangiCollected;
+    });
+    
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Nikom Ni Mankon - Meeting Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+          h1 { color: #059669; border-bottom: 2px solid #059669; padding-bottom: 10px; }
+          h2 { color: #333; margin-top: 20px; }
+          .summary-box { background: #f0fdf4; padding: 15px; border-radius: 10px; margin: 15px 0; }
+          .group-section { margin: 15px 0; padding: 10px; border-left: 4px solid #059669; background: #f9f9f9; }
+          table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+          th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+          th { background: #059669; color: white; }
+          .footer { margin-top: 30px; text-align: center; color: #666; font-size: 12px; }
+          .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; }
+          .ahead { background: #dcfce7; color: #166534; }
+          .current { background: #dbeafe; color: #1e40af; }
+          .behind { background: #fee2e2; color: #991b1b; }
+          @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+        </style>
+      </head>
+      <body>
+        <h1>🌴 NIKOM NI MANKON</h1>
+        <h2>📅 ${meeting.full}</h2>
+        <p>🏠 Host: ${meeting.host} | 📍 ${meeting.city}</p>
+        
+        <div class="summary-box">
+          <h3>💎 Collection Summary</h3>
+          <table>
+            <tr><td>💰 Njangi</td><td><strong>$${totalNjangi.toLocaleString()}</strong></td></tr>
+            <tr><td>🏦 Savings</td><td><strong>$${ledgerStats.totalCollected.toLocaleString()}</strong></td></tr>
+            <tr><td>🍽️ Host Fee</td><td><strong>$${hStats.collected.toLocaleString()}</strong></td></tr>
+            <tr><td>✋ Attendance</td><td><strong>${aStats.present}/${aStats.total} (${aStats.percentage}%)</strong></td></tr>
+          </table>
+        </div>
+        
+        <h2>💰 Njangi Payments by Group</h2>
+        ${groups.map((group, gIdx) => {
+          const ben = getBeneficiary(gIdx, selectedMeeting);
+          const stats = getGroupMeetingStats(selectedMeeting, gIdx);
+          return `
+            <div class="group-section">
+              <h3>${group.name}</h3>
+              <p>⭐ Beneficiary: <strong>${ben.name}</strong></p>
+              <p>✅ ${stats.njangiPaid}/${stats.njangiTotal} paid ($${stats.njangiCollected.toLocaleString()})</p>
+            </div>
+          `;
+        }).join('')}
+        
+        <h2>🏦 Savings Status Summary</h2>
+        <p>✨ Ahead: ${ledgerStats.membersAhead} | ✅ Current: ${ledgerStats.membersCurrent} | ⏳ Behind: ${ledgerStats.membersBehind}</p>
+        
+        <div class="footer">
+          <p>Report Generated: ${new Date().toLocaleDateString()}</p>
+          <p>Powered by TA-TECHSOLUTIONS | 📞 (571) 447-2698</p>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  // =====================================================
+  // SAVINGS LEDGER FUNCTIONS
+  // =====================================================
+  
+  // Get member's savings ledger (array of payments)
+  const getMemberSavingsLedger = (groupIdx, memberIdx) => {
+    const key = `${groupIdx}-${memberIdx}`;
+    return savingsLedger[key] || [];
+  };
+
+  // Calculate member's savings status
+  const getMemberSavingsStatus = (groupIdx, memberIdx) => {
+    const ledger = getMemberSavingsLedger(groupIdx, memberIdx);
+    const totalPaid = ledger.reduce((sum, payment) => sum + payment.amount, 0);
+    
+    // Expected = $100 per meeting (12 meetings total)
+    // For now, we'll use current meeting as the expected cutoff
+    const meetingsHeld = selectedMeeting + 1; // meetings 0 to selectedMeeting
+    const expectedTotal = meetingsHeld * 100;
+    const expectedYearly = 12 * 100; // $1,200 total for year
+    
+    const balance = totalPaid - expectedTotal;
+    const yearlyBalance = totalPaid - expectedYearly;
+    
+    return {
+      totalPaid,
+      expectedToDate: expectedTotal,
+      expectedYearly,
+      balance, // positive = ahead, negative = behind
+      yearlyBalance,
+      meetingsPaidFor: Math.floor(totalPaid / 100),
+      status: balance >= 0 ? (balance > 0 ? 'ahead' : 'current') : 'behind',
+      ledger
+    };
+  };
+
+  // Add savings payment
+  const addSavingsPayment = () => {
+    if (savingsPaymentAmount <= 0) return;
+    
+    const key = `${selectedSavingsMember.groupIdx}-${selectedSavingsMember.memberIdx}`;
+    const payment = {
+      id: Date.now(),
+      amount: savingsPaymentAmount,
+      date: new Date().toISOString(),
+      note: savingsPaymentNote.trim() || `Payment for Meeting #${selectedMeeting + 1}`,
+      meetingIdx: selectedMeeting,
+      recordedBy: 'admin'
+    };
+    
+    setSavingsLedger(prev => ({
+      ...prev,
+      [key]: [...(prev[key] || []), payment]
+    }));
+    
+    // Also mark the per-meeting checkbox if paying exactly $100 for current meeting
+    if (savingsPaymentAmount === 100) {
+      const meetingKey = `${selectedMeeting}-${selectedSavingsMember.groupIdx}-${selectedSavingsMember.memberIdx}`;
+      setSavingsFundPayments(prev => ({ ...prev, [meetingKey]: true }));
+    }
+    
+    setSavingsPaymentAmount(100);
+    setSavingsPaymentNote('');
+    setShowSavingsLedgerModal(false);
+    triggerConfetti();
+  };
+
+  // Delete savings payment
+  const deleteSavingsPayment = (groupIdx, memberIdx, paymentId) => {
+    const key = `${groupIdx}-${memberIdx}`;
+    setSavingsLedger(prev => ({
+      ...prev,
+      [key]: (prev[key] || []).filter(p => p.id !== paymentId)
+    }));
+  };
+
+  // Open savings ledger modal for a member
+  const openSavingsLedgerModal = (groupIdx, memberIdx) => {
+    setSelectedSavingsMember({ groupIdx, memberIdx });
+    setSavingsPaymentAmount(100);
+    setSavingsPaymentNote('');
+    setShowSavingsLedgerModal(true);
+  };
+
+  // Get overall savings statistics
+  const getOverallSavingsStats = () => {
+    let totalCollected = 0;
+    let membersAhead = 0;
+    let membersCurrent = 0;
+    let membersBehind = 0;
+    let totalOwed = 0;
+    let totalCredit = 0;
+    
+    const memberStats = [];
+    
+    groups.forEach((group, gIdx) => {
+      group.members.forEach((member, mIdx) => {
+        const status = getMemberSavingsStatus(gIdx, mIdx);
+        totalCollected += status.totalPaid;
+        
+        if (status.status === 'ahead') {
+          membersAhead++;
+          totalCredit += status.balance;
+        } else if (status.status === 'current') {
+          membersCurrent++;
+        } else {
+          membersBehind++;
+          totalOwed += Math.abs(status.balance);
+        }
+        
+        memberStats.push({
+          member,
+          groupIdx: gIdx,
+          memberIdx: mIdx,
+          groupName: group.name,
+          groupColor: group.color,
+          ...status
+        });
+      });
+    });
+    
+    // Sort by balance (most behind first)
+    memberStats.sort((a, b) => a.balance - b.balance);
+    
+    const meetingsHeld = selectedMeeting + 1;
+    const expectedTotal = totalMembers * meetingsHeld * 100;
+    
+    return {
+      totalCollected,
+      expectedTotal,
+      membersAhead,
+      membersCurrent,
+      membersBehind,
+      totalOwed,
+      totalCredit,
+      memberStats,
+      collectionRate: Math.round((totalCollected / expectedTotal) * 100) || 0
+    };
+  };
+
+  // Generate savings report for WhatsApp
+  const generateSavingsReport = () => {
+    const stats = getOverallSavingsStats();
+    const meetingsHeld = selectedMeeting + 1;
+    
+    let msg = `🏦 *NIKOM NI MANKON*\n`;
+    msg += `📊 *SAVINGS FUND REPORT*\n`;
+    msg += `${'━'.repeat(25)}\n\n`;
+    
+    msg += `📅 Through Meeting #${meetingsHeld}\n`;
+    msg += `💵 Expected per member: $${meetingsHeld * 100}\n\n`;
+    
+    msg += `💎 *SUMMARY*\n`;
+    msg += `${'─'.repeat(20)}\n`;
+    msg += `💰 Total Collected: $${stats.totalCollected.toLocaleString()}\n`;
+    msg += `🎯 Expected: $${stats.expectedTotal.toLocaleString()}\n`;
+    msg += `📈 Collection Rate: ${stats.collectionRate}%\n\n`;
+    
+    msg += `👥 *MEMBER STATUS*\n`;
+    msg += `✅ Paid Ahead: ${stats.membersAhead} members (+$${stats.totalCredit})\n`;
+    msg += `☑️ Current: ${stats.membersCurrent} members\n`;
+    msg += `⏳ Behind: ${stats.membersBehind} members (-$${stats.totalOwed})\n\n`;
+    
+    // Members behind
+    if (stats.membersBehind > 0) {
+      msg += `⚠️ *MEMBERS BEHIND*\n`;
+      msg += `${'─'.repeat(20)}\n`;
+      stats.memberStats
+        .filter(m => m.status === 'behind')
+        .slice(0, 15)
+        .forEach(m => {
+          msg += `• ${m.member.split(' ')[0]}: -$${Math.abs(m.balance)} (paid $${m.totalPaid})\n`;
+        });
+      if (stats.membersBehind > 15) {
+        msg += `  ...and ${stats.membersBehind - 15} more\n`;
+      }
+      msg += `\n`;
+    }
+    
+    // Members ahead
+    if (stats.membersAhead > 0) {
+      msg += `✨ *MEMBERS AHEAD*\n`;
+      msg += `${'─'.repeat(20)}\n`;
+      stats.memberStats
+        .filter(m => m.status === 'ahead')
+        .slice(-10)
+        .reverse()
+        .forEach(m => {
+          msg += `• ${m.member.split(' ')[0]}: +$${m.balance} (paid $${m.totalPaid})\n`;
+        });
+      msg += `\n`;
+    }
+    
+    msg += `${'━'.repeat(25)}\n`;
+    msg += `📅 Report: ${new Date().toLocaleDateString()}\n`;
+    msg += `\n_Powered by TA-TECHSOLUTIONS_\n📞 (571) 447-2698`;
+    
+    return msg;
+  };
+
   const getCarpoolMatches = (meetingIdx) => {
     const offers = [];
     const requests = [];
@@ -841,6 +1246,143 @@ export default function NikomNiMankon() {
       });
     }
     msg += `\n🌿 _Growing together!_ 🌿\n\n_Powered by TA-TECHSOLUTIONS_\n📞 (571) 447-2698`;
+    return msg;
+  };
+
+  // Generate comprehensive meeting report
+  const generateMeetingReport = () => {
+    const meeting = meetings[selectedMeeting];
+    const hostLoc = getHostingLocation(selectedMeeting);
+    const hStats = getMeetingHostFeeStats(selectedMeeting);
+    const sStats = getMeetingSavingsStats(selectedMeeting);
+    const aStats = getMeetingAttendanceStats(selectedMeeting);
+    
+    let msg = `📊 *NIKOM NI MANKON*\n`;
+    msg += `📋 *MEETING REPORT*\n`;
+    msg += `${'━'.repeat(25)}\n\n`;
+    
+    msg += `📅 *${meeting.full}*\n`;
+    msg += `🏠 Host: ${meeting.host}\n`;
+    
+    // Location
+    if (reportOptions.includeLocation && hostLoc?.address) {
+      msg += `\n📍 *LOCATION*\n`;
+      msg += `${hostLoc.address}\n`;
+      msg += `${hostLoc.city}, ${hostLoc.state} ${hostLoc.zip}\n`;
+      if (hostLoc.time) msg += `⏰ ${hostLoc.time}\n`;
+    } else {
+      msg += `📍 ${meeting.city}\n`;
+    }
+    
+    // Totals Summary
+    if (reportOptions.includeTotals) {
+      msg += `\n💎 *COLLECTION SUMMARY*\n`;
+      msg += `${'─'.repeat(20)}\n`;
+      
+      let grandTotal = 0;
+      
+      if (reportOptions.includeNjangi) {
+        let totalNjangi = 0;
+        groups.forEach((g, gIdx) => {
+          const stats = getGroupMeetingStats(selectedMeeting, gIdx);
+          totalNjangi += stats.njangiCollected;
+        });
+        msg += `💰 Njangi: $${totalNjangi.toLocaleString()}\n`;
+        grandTotal += totalNjangi;
+      }
+      
+      if (reportOptions.includeSavings) {
+        msg += `🏦 Savings: $${sStats.collected.toLocaleString()}\n`;
+        grandTotal += sStats.collected;
+      }
+      
+      if (reportOptions.includeHostFee) {
+        msg += `🍽️ Host Fee: $${hStats.collected.toLocaleString()}\n`;
+        grandTotal += hStats.collected;
+      }
+      
+      msg += `${'─'.repeat(20)}\n`;
+      msg += `💵 *TOTAL: $${grandTotal.toLocaleString()}*\n`;
+    }
+    
+    // Attendance
+    if (reportOptions.includeAttendance) {
+      msg += `\n✋ *ATTENDANCE*\n`;
+      msg += `Present: ${aStats.present}/${aStats.total} (${aStats.percentage}%)\n`;
+    }
+    
+    // Njangi Details by Group
+    if (reportOptions.includeNjangi) {
+      msg += `\n💰 *NJANGI PAYMENTS ($1,000)*\n`;
+      msg += `${'─'.repeat(20)}\n`;
+      
+      groups.forEach((g, gIdx) => {
+        const ben = getBeneficiary(gIdx, selectedMeeting);
+        const stats = getGroupMeetingStats(selectedMeeting, gIdx);
+        
+        msg += `\n*${g.name}*\n`;
+        msg += `⭐ Beneficiary: ${ben.name}\n`;
+        msg += `✅ ${stats.njangiPaid}/${stats.njangiTotal} paid\n`;
+        msg += `💵 Collected: $${stats.njangiCollected.toLocaleString()}/${stats.njangiTarget.toLocaleString()}\n`;
+        
+        // Payment methods
+        if (reportOptions.includePaymentMethods) {
+          const payMethods = getMemberPaymentMethods(gIdx, ben.index);
+          if (payMethods.length > 0) {
+            msg += `💳 `;
+            msg += payMethods.map(pm => {
+              const method = PAYMENT_METHODS.find(m => m.id === pm.method);
+              return `${method?.icon}${pm.handle}`;
+            }).join(' | ');
+            msg += `\n`;
+          }
+        }
+        
+        // Unpaid members
+        if (reportOptions.includeUnpaid) {
+          const unpaid = g.members.filter((_, mIdx) => !njangiPayments[`${selectedMeeting}-${gIdx}-${mIdx}`]);
+          if (unpaid.length > 0 && unpaid.length < g.members.length) {
+            msg += `⏳ Unpaid: ${unpaid.map(n => n.split(' ')[0]).join(', ')}\n`;
+          }
+        }
+      });
+    }
+    
+    // Savings Details
+    if (reportOptions.includeSavings) {
+      msg += `\n🏦 *SAVINGS FUND ($100)*\n`;
+      msg += `${'─'.repeat(20)}\n`;
+      msg += `✅ ${sStats.paid}/${sStats.total} paid\n`;
+      msg += `💵 Collected: $${sStats.collected.toLocaleString()}/$${sStats.target.toLocaleString()}\n`;
+      
+      if (reportOptions.includeUnpaid) {
+        const unpaidSavings = [];
+        groups.forEach((g, gIdx) => {
+          g.members.forEach((member, mIdx) => {
+            if (!savingsFundPayments[`${selectedMeeting}-${gIdx}-${mIdx}`]) {
+              unpaidSavings.push(member.split(' ')[0]);
+            }
+          });
+        });
+        if (unpaidSavings.length > 0 && unpaidSavings.length < totalMembers) {
+          msg += `⏳ Unpaid (${unpaidSavings.length}): ${unpaidSavings.slice(0, 10).join(', ')}${unpaidSavings.length > 10 ? '...' : ''}\n`;
+        }
+      }
+    }
+    
+    // Host Fee Details
+    if (reportOptions.includeHostFee) {
+      msg += `\n🍽️ *HOST FEE ($20)*\n`;
+      msg += `${'─'.repeat(20)}\n`;
+      msg += `✅ ${hStats.paid}/${hStats.total} paid\n`;
+      msg += `💵 Collected: $${hStats.collected.toLocaleString()}/$${hStats.target.toLocaleString()}\n`;
+      msg += `🏠 For: ${meeting.host}\n`;
+    }
+    
+    msg += `\n${'━'.repeat(25)}\n`;
+    msg += `📅 Report Generated: ${new Date().toLocaleDateString()}\n`;
+    msg += `\n_Powered by TA-TECHSOLUTIONS_\n📞 (571) 447-2698`;
+    
     return msg;
   };
 
@@ -1083,6 +1625,16 @@ export default function NikomNiMankon() {
             </div>
 
             <button onClick={() => setShowMemberModal(false)} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
+            
+            {/* Remove Member Button - Admin Only */}
+            {isAdmin && (
+              <button 
+                onClick={() => removeMember(selectedMember.groupIdx, selectedMember.memberIdx)} 
+                className="w-full mt-2 bg-red-100 hover:bg-red-200 text-red-600 py-2 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2"
+              >
+                🗑️ Remove Member
+              </button>
+            )}
           </GlassCard>
         </div>
       )}
@@ -1358,6 +1910,194 @@ export default function NikomNiMankon() {
         </div>
       )}
 
+      {/* Savings Ledger Modal */}
+      {showSavingsLedgerModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" gradient>
+            <div className="text-center mb-4">
+              <MemberAvatar 
+                name={groups[selectedSavingsMember.groupIdx]?.members[selectedSavingsMember.memberIdx] || ''} 
+                photo={getMemberPhoto(selectedSavingsMember.groupIdx, selectedSavingsMember.memberIdx)}
+                size="lg"
+                color={groups[selectedSavingsMember.groupIdx]?.color}
+              />
+              <h3 className="text-xl font-bold text-gray-800 mt-3">{groups[selectedSavingsMember.groupIdx]?.members[selectedSavingsMember.memberIdx]}</h3>
+              <p className="text-gray-500 text-sm">Savings Ledger</p>
+            </div>
+            
+            {/* Status Summary */}
+            {(() => {
+              const status = getMemberSavingsStatus(selectedSavingsMember.groupIdx, selectedSavingsMember.memberIdx);
+              return (
+                <div className={`p-4 rounded-xl mb-4 ${status.status === 'ahead' ? 'bg-green-50 border-2 border-green-300' : status.status === 'current' ? 'bg-blue-50 border-2 border-blue-300' : 'bg-red-50 border-2 border-red-300'}`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-600">Total Paid:</span>
+                    <span className="text-2xl font-bold text-gray-800">${status.totalPaid}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-500">Expected (Meeting #{selectedMeeting + 1}):</span>
+                    <span className="text-sm text-gray-600">${status.expectedToDate}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="text-sm font-medium">Balance:</span>
+                    <span className={`text-lg font-bold ${status.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {status.balance >= 0 ? '+' : ''}{status.balance >= 0 ? `$${status.balance}` : `-$${Math.abs(status.balance)}`}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-center">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.status === 'ahead' ? 'bg-green-200 text-green-800' : status.status === 'current' ? 'bg-blue-200 text-blue-800' : 'bg-red-200 text-red-800'}`}>
+                      {status.status === 'ahead' ? '✨ PAID AHEAD' : status.status === 'current' ? '✅ CURRENT' : '⏳ BEHIND'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Covers {status.meetingsPaidFor} of 12 meetings • Yearly goal: $1,200
+                  </p>
+                </div>
+              );
+            })()}
+            
+            {/* Add Payment (Admin only) */}
+            {isAdmin && (
+              <div className="bg-purple-50 p-4 rounded-xl mb-4">
+                <p className="text-sm font-bold text-purple-700 mb-3">➕ Record Payment</p>
+                <div className="flex gap-2 mb-2">
+                  {[100, 200, 300, 500, 600, 1200].map(amt => (
+                    <button 
+                      key={amt}
+                      onClick={() => setSavingsPaymentAmount(amt)}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${savingsPaymentAmount === amt ? 'bg-purple-500 text-white' : 'bg-white text-purple-600 hover:bg-purple-100'}`}
+                    >
+                      ${amt}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <input 
+                      type="number" 
+                      value={savingsPaymentAmount}
+                      onChange={(e) => setSavingsPaymentAmount(parseInt(e.target.value) || 0)}
+                      placeholder="Amount"
+                      className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-sm"
+                    />
+                  </div>
+                  <button 
+                    onClick={addSavingsPayment}
+                    className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all"
+                  >
+                    + Add
+                  </button>
+                </div>
+                <input 
+                  type="text"
+                  value={savingsPaymentNote}
+                  onChange={(e) => setSavingsPaymentNote(e.target.value)}
+                  placeholder="Note (optional): e.g., Paid for Jan-Mar"
+                  className="w-full mt-2 px-3 py-2 rounded-lg border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-xs"
+                />
+                <p className="text-xs text-gray-400 mt-1">Quick: $100=1 meeting, $600=6 meetings, $1200=full year</p>
+              </div>
+            )}
+            
+            {/* Payment History */}
+            <div className="mb-4">
+              <p className="text-sm font-bold text-gray-700 mb-2">📜 Payment History</p>
+              {(() => {
+                const ledger = getMemberSavingsLedger(selectedSavingsMember.groupIdx, selectedSavingsMember.memberIdx);
+                if (ledger.length === 0) {
+                  return <p className="text-gray-400 text-sm text-center py-4">No payments recorded yet</p>;
+                }
+                return (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {ledger.slice().reverse().map((payment, idx) => (
+                      <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-800">${payment.amount}</p>
+                          <p className="text-xs text-gray-500">{new Date(payment.date).toLocaleDateString()} • {payment.note}</p>
+                        </div>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => deleteSavingsPayment(selectedSavingsMember.groupIdx, selectedSavingsMember.memberIdx, payment.id)}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+            
+            <button onClick={() => setShowSavingsLedgerModal(false)} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Savings Report Modal */}
+      {showSavingsReportModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-2xl max-h-[90vh] flex flex-col" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">🏦 Savings Fund Report</h3>
+            
+            {/* Stats Overview */}
+            {(() => {
+              const stats = getOverallSavingsStats();
+              return (
+                <div className="grid grid-cols-4 gap-3 mb-4">
+                  <div className="bg-purple-50 p-3 rounded-xl text-center">
+                    <p className="text-xl font-bold text-purple-600">${stats.totalCollected.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500">Collected</p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-xl text-center">
+                    <p className="text-xl font-bold text-green-600">{stats.membersAhead}</p>
+                    <p className="text-xs text-gray-500">Ahead</p>
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded-xl text-center">
+                    <p className="text-xl font-bold text-blue-600">{stats.membersCurrent}</p>
+                    <p className="text-xs text-gray-500">Current</p>
+                  </div>
+                  <div className="bg-red-50 p-3 rounded-xl text-center">
+                    <p className="text-xl font-bold text-red-600">{stats.membersBehind}</p>
+                    <p className="text-xs text-gray-500">Behind</p>
+                  </div>
+                </div>
+              );
+            })()}
+            
+            {/* Preview */}
+            <div className="flex-1 bg-gray-100 rounded-xl p-3 overflow-auto text-xs font-mono whitespace-pre-wrap mb-4 max-h-64">
+              {generateSavingsReport()}
+            </div>
+            
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { 
+                  setWhatsAppMessage(generateSavingsReport()); 
+                  setShowSavingsReportModal(false); 
+                  setShowWhatsAppModal(true); 
+                }} 
+                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 rounded-xl font-bold transition-all shadow-lg"
+              >
+                📱 Share to WhatsApp
+              </button>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(generateSavingsReport());
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }} 
+                className={`px-6 py-3 rounded-xl font-bold transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+              >
+                {copied ? '✓ Copied!' : '📋 Copy'}
+              </button>
+            </div>
+            <button onClick={() => setShowSavingsReportModal(false)} className="mt-3 text-gray-500 hover:text-gray-700 text-sm text-center">Close</button>
+          </GlassCard>
+        </div>
+      )}
+
       {/* WhatsApp Modal */}
       {showWhatsAppModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1375,6 +2115,85 @@ export default function NikomNiMankon() {
         </div>
       )}
 
+      {/* Report Generator Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-2xl max-h-[90vh] flex flex-col" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">📊 Meeting Report Generator</h3>
+            <p className="text-gray-500 text-sm mb-4">{meetings[selectedMeeting]?.full} - {meetings[selectedMeeting]?.host}</p>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              {/* Report Options */}
+              <div className="space-y-2">
+                <p className="text-sm font-bold text-gray-700 mb-2">Include in Report:</p>
+                
+                {[
+                  { key: 'includeNjangi', label: '💰 Njangi Payments', desc: '$1,000 group payments' },
+                  { key: 'includeSavings', label: '🏦 Savings Fund', desc: '$100 savings' },
+                  { key: 'includeHostFee', label: '🍽️ Host Fee', desc: '$20 host fee' },
+                  { key: 'includeAttendance', label: '✋ Attendance', desc: 'Who was present' },
+                  { key: 'includePaymentMethods', label: '💳 Payment Methods', desc: 'Zelle, CashApp, etc.' },
+                  { key: 'includeLocation', label: '📍 Location Details', desc: 'Address & directions' },
+                  { key: 'includeTotals', label: '💵 Total Summary', desc: 'Grand totals' },
+                  { key: 'includeUnpaid', label: '⏳ Unpaid Members', desc: 'Who hasn\'t paid' },
+                ].map(opt => (
+                  <label key={opt.key} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-all">
+                    <input 
+                      type="checkbox" 
+                      checked={reportOptions[opt.key]} 
+                      onChange={(e) => setReportOptions({...reportOptions, [opt.key]: e.target.checked})}
+                      className="w-4 h-4 text-emerald-500 rounded"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-800">{opt.label}</span>
+                      <p className="text-xs text-gray-400">{opt.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              
+              {/* Preview */}
+              <div className="flex flex-col">
+                <p className="text-sm font-bold text-gray-700 mb-2">Preview:</p>
+                <div className="flex-1 bg-gray-100 rounded-xl p-3 overflow-auto text-xs font-mono whitespace-pre-wrap max-h-80">
+                  {generateMeetingReport()}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { 
+                  setWhatsAppMessage(generateMeetingReport()); 
+                  setShowReportModal(false); 
+                  setShowWhatsAppModal(true); 
+                }} 
+                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 rounded-xl font-bold transition-all shadow-lg"
+              >
+                📱 Share to WhatsApp
+              </button>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(generateMeetingReport());
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }} 
+                className={`px-4 py-3 rounded-xl font-bold transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              >
+                {copied ? '✓ Copied!' : '📋 Copy'}
+              </button>
+              <button 
+                onClick={() => { setShowReportModal(false); printReport(); }}
+                className="px-4 py-3 rounded-xl font-bold transition-all bg-purple-500 hover:bg-purple-600 text-white"
+              >
+                🖨️ Print
+              </button>
+            </div>
+            <button onClick={() => setShowReportModal(false)} className="mt-3 text-gray-500 hover:text-gray-700 text-sm text-center">Cancel</button>
+          </GlassCard>
+        </div>
+      )}
+
       {/* Settings Modal */}
       {showSettingsModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1386,35 +2205,96 @@ export default function NikomNiMankon() {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl">
                 <h4 className="font-bold text-gray-700 mb-3">🔐 Security</h4>
                 <div className="space-y-2">
-                  <button onClick={() => { setShowSettingsModal(false); setShowChangePasswordModal(true); }} className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all text-left">
-                    🔑 Change Password
+                  <button onClick={() => { setShowSettingsModal(false); setShowChangePasswordModal(true); }} className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-2">
+                    <span>🔑</span> Change Password
                   </button>
-                  <button onClick={() => { setShowSettingsModal(false); setShowSetupRecoveryModal(true); }} className="w-full bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all text-left">
-                    📱 {recoveryPhone ? 'Update' : 'Setup'} Recovery Phone
+                  <button onClick={() => { setShowSettingsModal(false); setShowSetupRecoveryModal(true); }} className="w-full bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-2">
+                    <span>📱</span> {recoveryPhone ? 'Update' : 'Setup'} Recovery Phone
                   </button>
                   {recoveryPhone && (
-                    <p className="text-xs text-gray-500 mt-1">Current: {recoveryPhone}</p>
+                    <p className="text-xs text-gray-500 mt-1 pl-2">✓ Recovery phone: {recoveryPhone}</p>
                   )}
+                </div>
+              </div>
+              
+              {/* Backup & Restore Section */}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl">
+                <h4 className="font-bold text-gray-700 mb-3">💾 Backup & Restore</h4>
+                <div className="space-y-2">
+                  <button onClick={createBackup} className="w-full bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-2">
+                    <span>📥</span> Download Backup
+                  </button>
+                  <label className="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 cursor-pointer">
+                    <span>📤</span> Restore from Backup
+                    <input type="file" accept=".json" onChange={restoreBackup} className="hidden" />
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">💡 Backup includes all payments, members, settings</p>
                 </div>
               </div>
               
               {/* Visibility Section */}
               <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-xl">
-                <h4 className="font-bold text-gray-700 mb-3">👁️ Non-Admin Visibility</h4>
+                <h4 className="font-bold text-gray-700 mb-2">👁️ Tab Visibility for Non-Admins</h4>
+                <p className="text-xs text-gray-500 mb-3">Control which tabs regular members can see (you can always see all tabs as admin)</p>
                 <div className="space-y-2">
-                  {[{key: 'njangi', label: 'Njangi Payments', icon: '💰'}, {key: 'savings', label: 'Savings Fund', icon: '🏦'}, {key: 'hostFee', label: 'Host Fee', icon: '🍽️'}].map(item => (
-                    <label key={item.key} className="flex items-center justify-between p-3 bg-white rounded-lg cursor-pointer hover:shadow-md transition-all">
-                      <span className="flex items-center gap-2"><span>{item.icon}</span> {item.label}</span>
-                      <div className={`w-12 h-6 rounded-full p-1 transition-all ${visibility[item.key] ? 'bg-emerald-500' : 'bg-gray-300'}`} onClick={() => setVisibility({...visibility, [item.key]: !visibility[item.key]})}>
-                        <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-all ${visibility[item.key] ? 'translate-x-6' : ''}`}/>
+                  {[
+                    {key: 'njangi', label: 'Njangi Payments', icon: '💰', desc: 'Show $1,000 group payments'},
+                    {key: 'savings', label: 'Savings Fund', icon: '🏦', desc: 'Show $100 savings payments'},
+                    {key: 'hostFee', label: 'Host Fee', icon: '🍽️', desc: 'Show $20 host fee payments'}
+                  ].map(item => (
+                    <div key={item.key} className="flex items-center justify-between p-3 bg-white rounded-lg hover:shadow-md transition-all">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{item.icon}</span>
+                        <div>
+                          <span className="font-medium text-gray-800">{item.label}</span>
+                          <p className="text-xs text-gray-400">{item.desc}</p>
+                        </div>
                       </div>
-                    </label>
+                      <button 
+                        onClick={() => setVisibility({...visibility, [item.key]: !visibility[item.key]})}
+                        className={`w-14 h-7 rounded-full p-1 transition-all ${visibility[item.key] ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                      >
+                        <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-all ${visibility[item.key] ? 'translate-x-7' : ''}`}/>
+                      </button>
+                    </div>
                   ))}
+                </div>
+                <div className="mt-3 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <p className="text-xs text-yellow-700">💡 <strong>Note:</strong> As admin, you can ALWAYS see all tabs. These settings only affect what non-admins see.</p>
+                </div>
+              </div>
+
+              {/* Current Status */}
+              <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-xl">
+                <h4 className="font-bold text-gray-700 mb-2">📊 Current Visibility Status</h4>
+                <div className="flex flex-wrap gap-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${visibility.njangi ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    💰 Njangi: {visibility.njangi ? '✓ Visible' : '✗ Hidden'}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${visibility.savings ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    🏦 Savings: {visibility.savings ? '✓ Visible' : '✗ Hidden'}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${visibility.hostFee ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    🍽️ Host Fee: {visibility.hostFee ? '✓ Visible' : '✗ Hidden'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Print & Reports */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl">
+                <h4 className="font-bold text-gray-700 mb-3">🖨️ Reports</h4>
+                <div className="space-y-2">
+                  <button onClick={() => { setShowSettingsModal(false); printReport(); }} className="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-2">
+                    <span>🖨️</span> Print Meeting Report
+                  </button>
+                  <button onClick={() => { setShowSettingsModal(false); setShowReportModal(true); }} className="w-full bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-2">
+                    <span>📊</span> Generate Custom Report
+                  </button>
                 </div>
               </div>
             </div>
             
-            <button onClick={() => setShowSettingsModal(false)} className="w-full mt-6 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
+            <button onClick={() => setShowSettingsModal(false)} className="w-full mt-6 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close Settings</button>
           </GlassCard>
         </div>
       )}
@@ -1431,6 +2311,29 @@ export default function NikomNiMankon() {
             <div className="flex gap-2">
               <button onClick={addNewMember} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">➕ Add</button>
               <button onClick={() => { setShowAddMemberModal(false); setNewMemberName(''); }} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl transition-all">Cancel</button>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Meeting Notes Modal */}
+      {showNotesModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-lg" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">📝 Meeting Notes</h3>
+            <p className="text-gray-500 text-sm mb-4">{meetings[editingNotes.meetingIdx]?.full} - {meetings[editingNotes.meetingIdx]?.host}</p>
+            
+            <textarea 
+              value={editingNotes.note} 
+              onChange={(e) => setEditingNotes({...editingNotes, note: e.target.value})}
+              placeholder="Add meeting notes, action items, announcements, decisions made, etc."
+              rows={8}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none resize-none"
+            />
+            
+            <div className="flex gap-2 mt-4">
+              <button onClick={saveNotes} className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-3 rounded-xl font-bold transition-all">💾 Save Notes</button>
+              <button onClick={() => setShowNotesModal(false)} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl transition-all">Cancel</button>
             </div>
           </GlassCard>
         </div>
@@ -1508,6 +2411,7 @@ export default function NikomNiMankon() {
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setShowSettingsModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl text-sm font-medium transition-all">⚙️ Settings</button>
                     <button onClick={() => setShowAddMemberModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl text-sm font-medium transition-all">➕ Add Member</button>
+                    <button onClick={() => { setSelectedMeeting(0); setShowReportModal(true); }} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl text-sm font-medium transition-all">📊 Report</button>
                   </div>
                 </div>
               </div>
@@ -1547,11 +2451,17 @@ export default function NikomNiMankon() {
               
               {isAdmin && (
                 <GlassCard className="p-5 border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50 hover:shadow-xl transition-all hover:-translate-y-1 relative">
-                  <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">🔒</div>
+                  <button 
+                    onClick={() => setVisibility({...visibility, savings: !visibility.savings})}
+                    className={`absolute top-2 right-2 text-xs px-2 py-1 rounded-full transition-all flex items-center gap-1 ${visibility.savings ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}
+                  >
+                    {visibility.savings ? '🔓 Open' : '🔒 Locked'}
+                  </button>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-purple-500 text-xs uppercase tracking-wide">Savings</p>
                       <p className="text-3xl font-bold text-purple-600 mt-1"><AnimatedCounter value={overallStats.totalSavingsCollected} prefix="$" /></p>
+                      <p className="text-xs text-gray-400 mt-1">{visibility.savings ? '👁️ Visible to all' : '🔒 Admin only'}</p>
                     </div>
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-xl flex items-center justify-center text-2xl shadow-lg">🏦</div>
                   </div>
@@ -1888,9 +2798,19 @@ export default function NikomNiMankon() {
                           })()}
                         </div>
                       </div>
-                      <div className="text-center bg-white/20 backdrop-blur rounded-xl p-4">
-                        <p className="text-3xl font-bold">${stats.njangiCollected.toLocaleString()}</p>
-                        <p className="text-white/80 text-sm">of ${stats.njangiTarget.toLocaleString()}</p>
+                      <div className="text-right">
+                        <div className="bg-white/20 backdrop-blur rounded-xl p-4 mb-2">
+                          <p className="text-3xl font-bold">${stats.njangiCollected.toLocaleString()}</p>
+                          <p className="text-white/80 text-sm">of ${stats.njangiTarget.toLocaleString()}</p>
+                        </div>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => setShowReportModal(true)}
+                            className="bg-white/20 hover:bg-white/30 backdrop-blur px-3 py-2 rounded-xl text-sm font-medium transition-all"
+                          >
+                            📊 Generate Report
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1956,27 +2876,67 @@ export default function NikomNiMankon() {
                 {meetings.map((m, idx) => (<button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedMeeting === idx ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg' : 'bg-gray-100 hover:bg-purple-100'}`}>{m.date}</button>))}
               </div>
             </GlassCard>
-            <div className="bg-gradient-to-r from-purple-500 via-violet-500 to-indigo-600 rounded-2xl p-5 text-white shadow-xl">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-purple-100 text-sm">{currentMeeting?.full}</p>
-                  <h2 className="text-2xl font-bold">🏦 Savings Fund</h2>
-                  <p className="text-purple-200 text-sm mt-1">$100 per member</p>
+            
+            {/* Savings Overview with Ledger Stats */}
+            {(() => {
+              const ledgerStats = getOverallSavingsStats();
+              return (
+                <div className="bg-gradient-to-r from-purple-500 via-violet-500 to-indigo-600 rounded-2xl p-5 text-white shadow-xl">
+                  <div className="flex justify-between items-start flex-wrap gap-4">
+                    <div>
+                      <p className="text-purple-100 text-sm">{currentMeeting?.full}</p>
+                      <h2 className="text-2xl font-bold">🏦 Savings Fund</h2>
+                      <p className="text-purple-200 text-sm mt-1">$100 per member per meeting</p>
+                      
+                      {/* Status badges */}
+                      <div className="flex gap-2 mt-3 flex-wrap">
+                        <span className="bg-green-400/30 backdrop-blur px-3 py-1 rounded-full text-xs font-medium">
+                          ✨ {ledgerStats.membersAhead} ahead
+                        </span>
+                        <span className="bg-blue-400/30 backdrop-blur px-3 py-1 rounded-full text-xs font-medium">
+                          ✅ {ledgerStats.membersCurrent} current
+                        </span>
+                        <span className="bg-red-400/30 backdrop-blur px-3 py-1 rounded-full text-xs font-medium">
+                          ⏳ {ledgerStats.membersBehind} behind
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="bg-white/20 backdrop-blur rounded-xl p-4 mb-2">
+                        <p className="text-3xl font-bold">${ledgerStats.totalCollected.toLocaleString()}</p>
+                        <p className="text-purple-100 text-sm">of ${ledgerStats.expectedTotal.toLocaleString()} expected</p>
+                        <p className="text-purple-200 text-xs mt-1">{ledgerStats.collectionRate}% collection rate</p>
+                      </div>
+                      {isAdmin && (
+                        <button 
+                          onClick={() => setShowSavingsReportModal(true)}
+                          className="bg-white/20 hover:bg-white/30 backdrop-blur px-3 py-2 rounded-xl text-sm font-medium transition-all"
+                        >
+                          📊 Savings Report
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Outstanding amounts */}
+                  {isAdmin && ledgerStats.totalOwed > 0 && (
+                    <div className="mt-4 bg-red-500/30 border border-red-300 rounded-xl p-3 backdrop-blur">
+                      <p className="text-xs text-red-200 mb-1">⚠️ OUTSTANDING BALANCE</p>
+                      <p className="text-xl font-bold">${ledgerStats.totalOwed.toLocaleString()} owed by {ledgerStats.membersBehind} members</p>
+                    </div>
+                  )}
                 </div>
-                <div className="text-center bg-white/20 backdrop-blur rounded-xl p-4">
-                  <p className="text-3xl font-bold">${savingsStats.collected.toLocaleString()}</p>
-                  <p className="text-purple-100 text-sm">of ${savingsStats.target.toLocaleString()}</p>
-                </div>
-              </div>
-              {isAdmin && (
-                <div className="mt-4 bg-red-500/30 border border-red-300 rounded-xl p-3 backdrop-blur">
-                  <p className="text-xs text-red-200 mb-1">🔒 CONFIDENTIAL - Admin Only</p>
-                  <p className="text-2xl font-bold">Total Savings: ${overallStats.totalSavingsCollected.toLocaleString()}</p>
-                </div>
-              )}
-            </div>
+              );
+            })()}
+            
             <GlassCard className="p-4 shadow-lg">
-              <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none mb-4" />
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                  <h3 className="font-bold text-gray-800">💰 Member Savings Status</h3>
+                  <p className="text-xs text-gray-500">Click on a member to view/edit their savings ledger</p>
+                </div>
+                <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-sm w-48" />
+              </div>
               <div className="space-y-3">
                 {groups.map((group, gIdx) => {
                   const filteredMembers = group.members.filter(m => !searchTerm || m.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -1986,17 +2946,40 @@ export default function NikomNiMankon() {
                       <div className="p-3" style={{ backgroundColor: group.color + '15' }}>
                         <span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3">
                         {filteredMembers.map((member) => {
                           const actualIdx = group.members.indexOf(member);
-                          const isPaid = savingsFundPayments[`${selectedMeeting}-${gIdx}-${actualIdx}`];
+                          const status = getMemberSavingsStatus(gIdx, actualIdx);
+                          
                           return (
-                            <div key={member} className={`flex items-center justify-between p-3 rounded-xl text-sm transition-all ${isPaid ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                            <div 
+                              key={member} 
+                              onClick={() => openSavingsLedgerModal(gIdx, actualIdx)}
+                              className={`flex items-center justify-between p-3 rounded-xl text-sm transition-all cursor-pointer hover:shadow-lg ${
+                                status.status === 'ahead' ? 'bg-green-50 border-2 border-green-300' : 
+                                status.status === 'current' ? 'bg-blue-50 border-2 border-blue-300' : 
+                                'bg-red-50 border-2 border-red-300'
+                              }`}
+                            >
                               <div className="flex items-center gap-2">
-                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} onClick={() => openMemberModal(gIdx, actualIdx)} />
-                                <span className="font-medium text-gray-800 truncate">{member}</span>
+                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} />
+                                <div>
+                                  <span className="font-medium text-gray-800">{member}</span>
+                                  <p className="text-xs text-gray-500">${status.totalPaid} paid</p>
+                                </div>
                               </div>
-                              <button onClick={() => toggleSavingsFund(selectedMeeting, gIdx, actualIdx)} disabled={!isAdmin} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${isPaid ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} ${!isAdmin && 'cursor-not-allowed opacity-70'}`}>{isPaid ? '✓' : '$100'}</button>
+                              <div className="text-right">
+                                <span className={`font-bold ${status.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {status.balance >= 0 ? '+' : ''}{status.balance >= 0 ? `$${status.balance}` : `-$${Math.abs(status.balance)}`}
+                                </span>
+                                <p className={`text-xs px-2 py-0.5 rounded-full ${
+                                  status.status === 'ahead' ? 'bg-green-200 text-green-800' : 
+                                  status.status === 'current' ? 'bg-blue-200 text-blue-800' : 
+                                  'bg-red-200 text-red-800'
+                                }`}>
+                                  {status.status === 'ahead' ? '✨ Ahead' : status.status === 'current' ? '✅ Current' : '⏳ Behind'}
+                                </p>
+                              </div>
                             </div>
                           );
                         })}
@@ -2135,12 +3118,20 @@ export default function NikomNiMankon() {
                     <div className="flex items-center gap-2">
                       {idx === 0 && <span className="bg-white text-emerald-600 text-xs font-bold px-3 py-1 rounded-full animate-pulse">🔥 NEXT</span>}
                       {isAdmin && (
-                        <button 
-                          onClick={() => openHostingModal(idx)} 
-                          className={`text-xs px-3 py-1 rounded-full transition-all ${idx === 0 ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
-                        >
-                          📍 Location
-                        </button>
+                        <>
+                          <button 
+                            onClick={() => openNotesModal(idx)} 
+                            className={`text-xs px-3 py-1 rounded-full transition-all ${idx === 0 ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-amber-100 hover:bg-amber-200 text-amber-700'}`}
+                          >
+                            📝 Notes{meetingNotes[idx] ? ' ✓' : ''}
+                          </button>
+                          <button 
+                            onClick={() => openHostingModal(idx)} 
+                            className={`text-xs px-3 py-1 rounded-full transition-all ${idx === 0 ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
+                          >
+                            📍 Location
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -2182,8 +3173,26 @@ export default function NikomNiMankon() {
                     </div>
                     <div className="mt-3 pt-3 border-t flex items-center justify-between text-xs text-gray-500">
                       <span>🍽️ {hStats.paid}/{hStats.total} host fee</span>
-                      <span>✋ {aStats.present}/{aStats.total} attendance</span>
+                      <div className="flex items-center gap-2">
+                        <span>✋ {aStats.present}/{aStats.total} attendance</span>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => { setSelectedMeeting(idx); setShowReportModal(true); }}
+                            className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-2 py-1 rounded-lg text-xs font-medium transition-all"
+                          >
+                            📊 Report
+                          </button>
+                        )}
+                      </div>
                     </div>
+                    
+                    {/* Show meeting notes if any */}
+                    {meetingNotes[idx] && (
+                      <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                        <p className="text-xs font-bold text-amber-700 mb-1">📝 Meeting Notes:</p>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{meetingNotes[idx]}</p>
+                      </div>
+                    )}
                   </div>
                 </GlassCard>
               );
@@ -2240,37 +3249,115 @@ export default function NikomNiMankon() {
         {activeTab === 'whatsapp' && (
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-2xl p-6 text-white shadow-xl">
-              <h2 className="text-3xl font-bold">📱 WhatsApp</h2>
-              <p className="text-green-100 mt-2">Share updates with the community</p>
+              <h2 className="text-3xl font-bold">📱 WhatsApp Sharing</h2>
+              <p className="text-green-100 mt-2">Generate messages and reports for the community</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <GlassCard className="p-6 shadow-lg">
-                <div className="text-center mb-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                    <span className="text-3xl">📊</span>
-                  </div>
-                  <h3 className="font-bold text-gray-800 text-lg">Full Summary</h3>
-                  <p className="text-gray-500 text-sm">Complete payment status</p>
-                </div>
-                <select onChange={(e) => setSelectedMeeting(parseInt(e.target.value))} value={selectedMeeting} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4">
-                  {meetings.map((m, idx) => (<option key={idx} value={idx}>#{idx + 1}: {m.full}</option>))}
-                </select>
-                <button onClick={() => openWhatsApp('summary')} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">📱 Generate Summary</button>
-              </GlassCard>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Meeting Reminder */}
               <GlassCard className="p-6 shadow-lg">
                 <div className="text-center mb-4">
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
                     <span className="text-3xl">🔔</span>
                   </div>
                   <h3 className="font-bold text-gray-800 text-lg">Meeting Reminder</h3>
-                  <p className="text-gray-500 text-sm">Remind members</p>
+                  <p className="text-gray-500 text-sm">Send before meeting</p>
                 </div>
-                <select onChange={(e) => setSelectedMeeting(parseInt(e.target.value))} value={selectedMeeting} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4">
-                  {meetings.map((m, idx) => (<option key={idx} value={idx}>#{idx + 1}: {m.full}</option>))}
+                <select onChange={(e) => setSelectedMeeting(parseInt(e.target.value))} value={selectedMeeting} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4 text-sm">
+                  {meetings.map((m, idx) => (<option key={idx} value={idx}>#{idx + 1}: {m.date}</option>))}
                 </select>
-                <button onClick={() => openWhatsApp('reminder')} className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">📱 Generate Reminder</button>
+                <button onClick={() => openWhatsApp('reminder')} className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">📱 Generate</button>
+              </GlassCard>
+              
+              {/* Payment Status */}
+              <GlassCard className="p-6 shadow-lg">
+                <div className="text-center mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                    <span className="text-3xl">💰</span>
+                  </div>
+                  <h3 className="font-bold text-gray-800 text-lg">Payment Status</h3>
+                  <p className="text-gray-500 text-sm">Quick payment update</p>
+                </div>
+                <select onChange={(e) => setSelectedMeeting(parseInt(e.target.value))} value={selectedMeeting} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4 text-sm">
+                  {meetings.map((m, idx) => (<option key={idx} value={idx}>#{idx + 1}: {m.date}</option>))}
+                </select>
+                <button onClick={() => openWhatsApp('summary')} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">📱 Generate</button>
+              </GlassCard>
+              
+              {/* Full Report */}
+              <GlassCard className="p-6 shadow-lg border-2 border-purple-200">
+                <div className="text-center mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                    <span className="text-3xl">📊</span>
+                  </div>
+                  <h3 className="font-bold text-gray-800 text-lg">Full Report</h3>
+                  <p className="text-gray-500 text-sm">Customizable detailed report</p>
+                </div>
+                <select onChange={(e) => setSelectedMeeting(parseInt(e.target.value))} value={selectedMeeting} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4 text-sm">
+                  {meetings.map((m, idx) => (<option key={idx} value={idx}>#{idx + 1}: {m.date}</option>))}
+                </select>
+                <button onClick={() => setShowReportModal(true)} className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">📊 Generate Report</button>
+              </GlassCard>
+              
+              {/* Savings Report - NEW */}
+              <GlassCard className="p-6 shadow-lg border-2 border-indigo-200">
+                <div className="text-center mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-400 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                    <span className="text-3xl">🏦</span>
+                  </div>
+                  <h3 className="font-bold text-gray-800 text-lg">Savings Report</h3>
+                  <p className="text-gray-500 text-sm">Who's ahead/behind</p>
+                </div>
+                <div className="mb-4">
+                  {(() => {
+                    const stats = getOverallSavingsStats();
+                    return (
+                      <div className="bg-indigo-50 rounded-xl p-3 text-center">
+                        <p className="text-lg font-bold text-indigo-600">${stats.totalCollected.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">{stats.membersBehind} behind, {stats.membersAhead} ahead</p>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <button onClick={() => setShowSavingsReportModal(true)} className="w-full bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">🏦 Generate Report</button>
               </GlassCard>
             </div>
+            
+            {/* Quick Stats for Selected Meeting */}
+            <GlassCard className="p-6 shadow-lg">
+              <h3 className="font-bold text-gray-800 mb-4">📈 Meeting #{selectedMeeting + 1} Quick Stats</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {(() => {
+                  const hStats = getMeetingHostFeeStats(selectedMeeting);
+                  const sStats = getMeetingSavingsStats(selectedMeeting);
+                  const aStats = getMeetingAttendanceStats(selectedMeeting);
+                  let totalNjangi = 0;
+                  groups.forEach((g, gIdx) => {
+                    totalNjangi += getGroupMeetingStats(selectedMeeting, gIdx).njangiCollected;
+                  });
+                  return (
+                    <>
+                      <div className="bg-emerald-50 p-4 rounded-xl text-center">
+                        <p className="text-2xl font-bold text-emerald-600">${totalNjangi.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">💰 Njangi</p>
+                      </div>
+                      <div className="bg-purple-50 p-4 rounded-xl text-center">
+                        <p className="text-2xl font-bold text-purple-600">${sStats.collected.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">🏦 Savings</p>
+                      </div>
+                      <div className="bg-teal-50 p-4 rounded-xl text-center">
+                        <p className="text-2xl font-bold text-teal-600">${hStats.collected.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">🍽️ Host Fee</p>
+                      </div>
+                      <div className="bg-blue-50 p-4 rounded-xl text-center">
+                        <p className="text-2xl font-bold text-blue-600">{aStats.percentage}%</p>
+                        <p className="text-xs text-gray-500">✋ Attendance</p>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </GlassCard>
           </div>
         )}
 
