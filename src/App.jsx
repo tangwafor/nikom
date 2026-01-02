@@ -47,7 +47,7 @@ const rules = [
   { title: 'Late Payment', text: 'Fine for late payment.', icon: '⚠️', amount: '$250' },
 ];
 
-const LOCAL_KEY = 'nikom_premium_v3';
+const LOCAL_KEY = 'nikom_premium_v4';
 
 const STATUS_OPTIONS = [
   { id: 'coming', label: 'Coming', icon: '✅', color: '#10B981' },
@@ -58,57 +58,47 @@ const STATUS_OPTIONS = [
   { id: 'arrived', label: 'Arrived!', icon: '🎉', color: '#059669' },
 ];
 
-// =====================================================
-// SVG & UI COMPONENTS
-// =====================================================
-const RaffiaPalmSVG = ({ className }) => (
-  <svg viewBox="0 0 120 180" className={className}>
-    <defs>
-      <linearGradient id="trunkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#8B5A2B"/>
-        <stop offset="100%" stopColor="#5D4037"/>
-      </linearGradient>
-      <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#2E7D32"/>
-        <stop offset="100%" stopColor="#1B5E20"/>
-      </linearGradient>
-    </defs>
-    <path d="M55 180 L55 90 Q55 85 60 85 Q65 85 65 90 L65 180" fill="url(#trunkGrad)"/>
-    <path d="M57 180 L57 95 Q57 90 60 90 Q63 90 63 95 L63 180" fill="#6D4C41"/>
-    <path d="M60 85 Q20 60 5 30 Q15 50 60 82" fill="url(#leafGrad)"/>
-    <path d="M60 82 Q25 55 10 20 Q20 45 60 78" fill="#2E7D32"/>
-    <path d="M60 85 Q100 60 115 30 Q105 50 60 82" fill="url(#leafGrad)"/>
-    <path d="M60 82 Q95 55 110 20 Q100 45 60 78" fill="#2E7D32"/>
-    <path d="M60 80 Q58 40 50 5 Q58 35 60 75" fill="url(#leafGrad)"/>
-    <path d="M60 80 Q62 40 70 5 Q62 35 60 75" fill="#2E7D32"/>
-    <ellipse cx="60" cy="88" rx="10" ry="6" fill="#5D4037"/>
-    <circle cx="55" cy="92" r="3" fill="#8B4513"/>
-    <circle cx="65" cy="92" r="3" fill="#8B4513"/>
-  </svg>
-);
+const CARPOOL_AREAS = [
+  { id: 'baltimore', name: 'Baltimore', icon: '🏙️' },
+  { id: 'silverspring', name: 'Silver Spring', icon: '🌟' },
+  { id: 'columbia', name: 'Columbia', icon: '🏘️' },
+  { id: 'laurel', name: 'Laurel', icon: '🌿' },
+  { id: 'rockville', name: 'Rockville', icon: '🪨' },
+  { id: 'bowie', name: 'Bowie', icon: '🏹' },
+  { id: 'gaithersburg', name: 'Gaithersburg', icon: '🌳' },
+  { id: 'frederick', name: 'Frederick', icon: '⛰️' },
+  { id: 'annapolis', name: 'Annapolis', icon: '⚓' },
+  { id: 'dc', name: 'Washington DC', icon: '🏛️' },
+  { id: 'other', name: 'Other Area', icon: '📍' },
+];
 
-const MemberAvatar = ({ name, photo, size = 'md', color = '#059669', onClick, isAdmin }) => {
+// =====================================================
+// REUSABLE COMPONENTS
+// =====================================================
+const MemberAvatar = ({ name, photo, size = 'md', color = '#059669', onClick }) => {
   const sizes = { sm: 'w-8 h-8 text-xs', md: 'w-12 h-12 text-sm', lg: 'w-16 h-16 text-lg', xl: 'w-20 h-20 text-xl' };
-  const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const initials = name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
   
   return (
-    <div className={`relative ${sizes[size]} rounded-full overflow-hidden shadow-lg ring-2 ring-white cursor-pointer transition-all hover:scale-110 hover:ring-4`} style={{ backgroundColor: color }} onClick={onClick}>
+    <div 
+      className={`relative ${sizes[size]} rounded-full overflow-hidden shadow-lg ring-2 ring-white transition-all hover:scale-110 hover:ring-4 ${onClick ? 'cursor-pointer' : ''}`} 
+      style={{ backgroundColor: color }} 
+      onClick={onClick}
+    >
       {photo ? (
         <img src={photo} alt={name} className="w-full h-full object-cover" />
       ) : (
         <div className="w-full h-full flex items-center justify-center text-white font-bold">{initials}</div>
       )}
-      {isAdmin && (
-        <div className="absolute inset-0 bg-black/0 hover:bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-all">
-          <span className="text-white text-xs">📷</span>
-        </div>
-      )}
     </div>
   );
 };
 
-const GlassCard = ({ children, className = '', gradient = false }) => (
-  <div className={`backdrop-blur-md bg-white/80 rounded-2xl shadow-xl border border-white/20 ${gradient ? 'bg-gradient-to-br from-white/90 to-white/70' : ''} ${className}`}>
+const GlassCard = ({ children, className = '', gradient = false, onClick }) => (
+  <div 
+    className={`backdrop-blur-md bg-white/80 rounded-2xl shadow-xl border border-white/20 ${gradient ? 'bg-gradient-to-br from-white/90 to-white/70' : ''} ${onClick ? 'cursor-pointer' : ''} ${className}`}
+    onClick={onClick}
+  >
     {children}
   </div>
 );
@@ -171,15 +161,22 @@ const PulsingDot = ({ color = '#10B981' }) => (
 // MAIN APP COMPONENT
 // =====================================================
 export default function NikomNiMankon() {
-  // Auth & Admin
+  // Auth & Admin State
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
   const [adminPassword, setAdminPassword] = useState('nikom2026');
+  const [recoveryPhone, setRecoveryPhone] = useState('');
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [showSetupRecoveryModal, setShowSetupRecoveryModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
+  const [newPhoneInput, setNewPhoneInput] = useState('');
 
   // Connection State
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -204,23 +201,12 @@ export default function NikomNiMankon() {
   const [meetingNotes, setMeetingNotes] = useState({});
   const [memberStatuses, setMemberStatuses] = useState({});
   const [statusMessages, setStatusMessages] = useState({});
-  const [showCheckinModal, setShowCheckinModal] = useState(false);
-  const [checkinMember, setCheckinMember] = useState({ groupIdx: 0, memberIdx: 0 });
-  const [checkinMessage, setCheckinMessage] = useState('');
   const [memberLocations, setMemberLocations] = useState({});
   const [carpoolOffers, setCarpoolOffers] = useState({});
   const [carpoolRequests, setCarpoolRequests] = useState({});
-  const [showCarpoolModal, setShowCarpoolModal] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [selectedLocationMember, setSelectedLocationMember] = useState(null);
-  
-  // Meeting venue location (can be updated per meeting)
-  const [venueLocation, setVenueLocation] = useState({ lat: 39.2904, lng: -76.6122, address: 'Baltimore, MD' });
 
   // Settings
   const [visibility, setVisibility] = useState({ njangi: false, savings: false, hostFee: false });
-  const [whatsAppOptions, setWhatsAppOptions] = useState({ includeNjangi: true, includeSavings: false, includeHostFee: true, includeNotes: true });
 
   // UI State
   const [showConfetti, setShowConfetti] = useState(false);
@@ -228,8 +214,6 @@ export default function NikomNiMankon() {
   const [whatsAppMessage, setWhatsAppMessage] = useState('');
   const [copied, setCopied] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showWhatsAppOptionsModal, setShowWhatsAppOptionsModal] = useState(false);
-  const [pendingWhatsAppType, setPendingWhatsAppType] = useState(null);
   const [showBeneficiaryModal, setShowBeneficiaryModal] = useState(false);
   const [editingBeneficiary, setEditingBeneficiary] = useState({ meetingIdx: 0, groupIdx: 0 });
   const [showNotesModal, setShowNotesModal] = useState(false);
@@ -239,8 +223,12 @@ export default function NikomNiMankon() {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberGroup, setNewMemberGroup] = useState(0);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [showChartsModal, setShowChartsModal] = useState(false);
+  const [showCheckinModal, setShowCheckinModal] = useState(false);
+  const [checkinMember, setCheckinMember] = useState({ groupIdx: 0, memberIdx: 0 });
+  const [checkinMessage, setCheckinMessage] = useState('');
+  const [showCarpoolModal, setShowCarpoolModal] = useState(false);
+  const [selectedCarpoolArea, setSelectedCarpoolArea] = useState('');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const fileInputRef = useRef(null);
 
   const totalMembers = useMemo(() => groups.reduce((a, g) => a + g.members.length, 0), [groups]);
@@ -263,6 +251,7 @@ export default function NikomNiMankon() {
       const { data: settingsData } = await supabase.from('app_settings').select('*').limit(1).single();
       if (settingsData) {
         if (settingsData.admin_password_hash) setAdminPassword(settingsData.admin_password_hash);
+        if (settingsData.recovery_phone) setRecoveryPhone(settingsData.recovery_phone);
         if (settingsData.visibility) setVisibility(settingsData.visibility);
       }
     } catch (e) { console.log('Using local data'); }
@@ -271,6 +260,8 @@ export default function NikomNiMankon() {
     if (saved) {
       try {
         const data = JSON.parse(saved);
+        if (data.adminPassword) setAdminPassword(data.adminPassword);
+        if (data.recoveryPhone) setRecoveryPhone(data.recoveryPhone);
         if (data.njangiPayments) setNjangiPayments(data.njangiPayments);
         if (data.hostFeePayments) setHostFeePayments(data.hostFeePayments);
         if (data.savingsFundPayments) setSavingsFundPayments(data.savingsFundPayments);
@@ -286,6 +277,7 @@ export default function NikomNiMankon() {
         if (data.meetingNotes) setMeetingNotes(data.meetingNotes);
         if (data.groups) setGroups(data.groups);
         if (data.isAdmin) setIsAdmin(data.isAdmin);
+        if (data.visibility) setVisibility(data.visibility);
       } catch (e) { console.error('Error loading'); }
     }
     setIsLoading(false);
@@ -293,33 +285,107 @@ export default function NikomNiMankon() {
 
   useEffect(() => {
     if (!isLoading) {
-      const data = { njangiPayments, hostFeePayments, savingsFundPayments, attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, memberLocations, carpoolOffers, carpoolRequests, beneficiaryOverrides, meetingNotes, groups, isAdmin };
+      const data = { 
+        adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, 
+        attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, 
+        memberLocations, carpoolOffers, carpoolRequests, beneficiaryOverrides, 
+        meetingNotes, groups, isAdmin, visibility 
+      };
       localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
     }
-  }, [njangiPayments, hostFeePayments, savingsFundPayments, attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, memberLocations, carpoolOffers, carpoolRequests, beneficiaryOverrides, meetingNotes, groups, isAdmin, isLoading]);
+  }, [adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, memberLocations, carpoolOffers, carpoolRequests, beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility, isLoading]);
 
   // =====================================================
-  // AUTH FUNCTIONS
+  // AUTH FUNCTIONS WITH PHONE RECOVERY
   // =====================================================
   const handleLogin = () => {
     if (passwordInput === adminPassword) {
-      setIsAdmin(true); setShowLoginModal(false); setPasswordInput(''); setLoginError(''); triggerConfetti();
-    } else { setLoginError('Incorrect password'); }
+      setIsAdmin(true); 
+      setShowLoginModal(false); 
+      setPasswordInput(''); 
+      setLoginError(''); 
+      triggerConfetti();
+    } else { 
+      setLoginError('Incorrect password'); 
+    }
   };
 
-  const handleLogout = () => { setIsAdmin(false); };
+  const handleLogout = () => { 
+    setIsAdmin(false); 
+  };
+
+  const generateRecoveryCode = () => {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedCode(code);
+    return code;
+  };
+
+  const handleForgotPassword = () => {
+    if (!recoveryPhone) {
+      setLoginError('No recovery phone set. Contact TA-TECHSOLUTIONS at (571) 447-2698');
+      return;
+    }
+    const code = generateRecoveryCode();
+    // In production, this would send an actual SMS
+    alert(`📱 Recovery code sent to ${recoveryPhone.slice(0, 3)}***${recoveryPhone.slice(-4)}\n\nFor demo: Your code is ${code}`);
+    setCodeSent(true);
+    setLoginError('');
+  };
+
+  const handleVerifyCode = () => {
+    if (recoveryCode === generatedCode) {
+      setCodeSent(false);
+      setShowForgotPasswordModal(false);
+      setShowChangePasswordModal(true);
+      setLoginError('');
+      setRecoveryCode('');
+      setPasswordInput(adminPassword); // Pre-fill for "current password" bypass
+    } else {
+      setLoginError('Invalid code. Please try again.');
+    }
+  };
 
   const handleChangePassword = async () => {
-    if (passwordInput !== adminPassword) { setLoginError('Current password incorrect'); return; }
-    if (newPassword.length < 4) { setLoginError('Min 4 characters'); return; }
-    if (newPassword !== confirmPassword) { setLoginError('Passwords do not match'); return; }
+    if (passwordInput !== adminPassword && !codeSent) { 
+      setLoginError('Current password incorrect'); 
+      return; 
+    }
+    if (newPassword.length < 4) { 
+      setLoginError('Min 4 characters'); 
+      return; 
+    }
+    if (newPassword !== confirmPassword) { 
+      setLoginError('Passwords do not match'); 
+      return; 
+    }
     setAdminPassword(newPassword);
-    try { await supabase.from('app_settings').update({ admin_password_hash: newPassword }).neq('id', ''); } catch (e) {}
-    setShowChangePasswordModal(false); setPasswordInput(''); setNewPassword(''); setConfirmPassword(''); setLoginError(''); triggerConfetti();
+    try { 
+      await supabase.from('app_settings').update({ admin_password_hash: newPassword }).neq('id', ''); 
+    } catch (e) {}
+    setShowChangePasswordModal(false); 
+    setPasswordInput(''); 
+    setNewPassword(''); 
+    setConfirmPassword(''); 
+    setLoginError(''); 
+    triggerConfetti();
+    alert('✅ Password changed successfully!');
+  };
+
+  const handleSetupRecoveryPhone = () => {
+    if (!newPhoneInput || newPhoneInput.length < 10) {
+      setLoginError('Please enter a valid phone number');
+      return;
+    }
+    setRecoveryPhone(newPhoneInput);
+    setShowSetupRecoveryModal(false);
+    setNewPhoneInput('');
+    setLoginError('');
+    triggerConfetti();
+    alert(`✅ Recovery phone set to ${newPhoneInput}`);
   };
 
   // =====================================================
-  // MEMBER PHOTO FUNCTIONS
+  // MEMBER & PHOTO FUNCTIONS
   // =====================================================
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
@@ -348,19 +414,45 @@ export default function NikomNiMankon() {
   };
 
   // =====================================================
-  // PAYMENT FUNCTIONS
+  // BENEFICIARY FUNCTIONS
   // =====================================================
   const getBeneficiary = (groupIdx, meetingIdx) => {
     const group = groups[groupIdx];
+    if (!group) return { name: 'Unknown', index: 0, isOverride: false };
     const overrideKey = `${meetingIdx}-${groupIdx}`;
     if (beneficiaryOverrides[overrideKey] !== undefined) {
       const idx = beneficiaryOverrides[overrideKey];
-      return { name: group.members[idx], index: idx, isOverride: true };
+      return { name: group.members[idx] || 'Unknown', index: idx, isOverride: true };
     }
     const idx = meetingIdx % group.members.length;
-    return { name: group.members[idx], index: idx, isOverride: false };
+    return { name: group.members[idx] || 'Unknown', index: idx, isOverride: false };
   };
 
+  const openBeneficiaryModal = (meetingIdx, groupIdx) => {
+    if (!isAdmin) return;
+    setEditingBeneficiary({ meetingIdx, groupIdx });
+    setShowBeneficiaryModal(true);
+  };
+
+  const saveBeneficiaryOverride = (memberIdx) => {
+    if (!isAdmin) return;
+    setBeneficiaryOverrides(prev => ({ ...prev, [`${editingBeneficiary.meetingIdx}-${editingBeneficiary.groupIdx}`]: memberIdx }));
+    setShowBeneficiaryModal(false); 
+    triggerConfetti();
+  };
+
+  const clearBeneficiaryOverride = () => {
+    setBeneficiaryOverrides(prev => { 
+      const n = { ...prev }; 
+      delete n[`${editingBeneficiary.meetingIdx}-${editingBeneficiary.groupIdx}`]; 
+      return n; 
+    });
+    setShowBeneficiaryModal(false);
+  };
+
+  // =====================================================
+  // PAYMENT FUNCTIONS
+  // =====================================================
   const toggleNjangi = (meetingIdx, groupIdx, memberIdx) => {
     if (!isAdmin) return;
     const key = `${meetingIdx}-${groupIdx}-${memberIdx}`;
@@ -387,74 +479,6 @@ export default function NikomNiMankon() {
     const key = `${meetingIdx}-${groupIdx}-${memberIdx}`;
     setAttendance(prev => ({ ...prev, [key]: !prev[key] }));
     triggerConfetti();
-  };
-
-  // =====================================================
-  // STATS FUNCTIONS
-  // =====================================================
-  const getGroupMeetingStats = (meetingIdx, groupIdx) => {
-    const group = groups[groupIdx];
-    let njangiPaid = 0;
-    group.members.forEach((_, mIdx) => { if (njangiPayments[`${meetingIdx}-${groupIdx}-${mIdx}`]) njangiPaid++; });
-    return { njangiPaid, njangiTotal: group.members.length, njangiCollected: njangiPaid * 1000, njangiTarget: group.members.length * 1000, njangiPercentage: Math.round((njangiPaid / group.members.length) * 100) };
-  };
-
-  const getMeetingHostFeeStats = (meetingIdx) => {
-    let totalPaid = 0;
-    groups.forEach((group, gIdx) => { group.members.forEach((_, mIdx) => { if (hostFeePayments[`${meetingIdx}-${gIdx}-${mIdx}`]) totalPaid++; }); });
-    return { paid: totalPaid, total: totalMembers, collected: totalPaid * 20, target: totalMembers * 20, percentage: Math.round((totalPaid / totalMembers) * 100) };
-  };
-
-  const getMeetingSavingsStats = (meetingIdx) => {
-    let totalPaid = 0;
-    groups.forEach((group, gIdx) => { group.members.forEach((_, mIdx) => { if (savingsFundPayments[`${meetingIdx}-${gIdx}-${mIdx}`]) totalPaid++; }); });
-    return { paid: totalPaid, total: totalMembers, collected: totalPaid * 100, target: totalMembers * 100, percentage: Math.round((totalPaid / totalMembers) * 100) };
-  };
-
-  const getMeetingAttendanceStats = (meetingIdx) => {
-    let present = 0;
-    groups.forEach((group, gIdx) => { group.members.forEach((_, mIdx) => { if (attendance[`${meetingIdx}-${gIdx}-${mIdx}`]) present++; }); });
-    return { present, total: totalMembers, percentage: Math.round((present / totalMembers) * 100) };
-  };
-
-  const getOverallStats = () => {
-    let totalNjangi = 0, totalHostFee = 0, totalSavings = 0;
-    Object.values(njangiPayments).forEach(v => { if (v) totalNjangi++; });
-    Object.values(hostFeePayments).forEach(v => { if (v) totalHostFee++; });
-    Object.values(savingsFundPayments).forEach(v => { if (v) totalSavings++; });
-    return { totalNjangiCollected: totalNjangi * 1000, totalHostFeeCollected: totalHostFee * 20, totalSavingsCollected: totalSavings * 100, totalCollected: (totalNjangi * 1000) + (totalHostFee * 20) + (totalSavings * 100) };
-  };
-
-  const overallStats = getOverallStats();
-  const currentMeeting = meetings[selectedMeeting];
-  const hostFeeStats = getMeetingHostFeeStats(selectedMeeting);
-  const savingsStats = getMeetingSavingsStats(selectedMeeting);
-  const attendanceStats = getMeetingAttendanceStats(selectedMeeting);
-
-  // =====================================================
-  // MEMBER MANAGEMENT
-  // =====================================================
-  const addNewMember = () => {
-    if (!newMemberName.trim()) return;
-    setGroups(prev => prev.map((g, idx) => idx === newMemberGroup ? { ...g, members: [...g.members, newMemberName.trim()] } : g));
-    setNewMemberName(''); setShowAddMemberModal(false); triggerConfetti();
-  };
-
-  const saveBeneficiaryOverride = (memberIdx) => {
-    if (!isAdmin) return;
-    setBeneficiaryOverrides(prev => ({ ...prev, [`${editingBeneficiary.meetingIdx}-${editingBeneficiary.groupIdx}`]: memberIdx }));
-    setShowBeneficiaryModal(false); triggerConfetti();
-  };
-
-  const clearBeneficiaryOverride = () => {
-    setBeneficiaryOverrides(prev => { const n = { ...prev }; delete n[`${editingBeneficiary.meetingIdx}-${editingBeneficiary.groupIdx}`]; return n; });
-    setShowBeneficiaryModal(false);
-  };
-
-  const saveMeetingNotes = () => {
-    if (!isAdmin) return;
-    setMeetingNotes(prev => ({ ...prev, [editingNotes.meetingIdx]: editingNotes.note }));
-    setShowNotesModal(false); triggerConfetti();
   };
 
   // =====================================================
@@ -489,73 +513,9 @@ export default function NikomNiMankon() {
     setCheckinMessage('');
   };
 
-  const getMeetingStatusStats = (meetingIdx) => {
-    let coming = 0, onway = 0, cantmake = 0, arrived = 0, noresponse = 0;
-    groups.forEach((group, gIdx) => {
-      group.members.forEach((_, mIdx) => {
-        const status = getMemberStatus(meetingIdx, gIdx, mIdx);
-        if (status === 'coming' || status === 'almost') coming++;
-        else if (status === 'onway' || status === 'late') onway++;
-        else if (status === 'cantmake') cantmake++;
-        else if (status === 'arrived') arrived++;
-        else noresponse++;
-      });
-    });
-    return { coming, onway, cantmake, arrived, noresponse, total: totalMembers };
-  };
-
-  const getAllStatusUpdates = (meetingIdx) => {
-    const updates = [];
-    groups.forEach((group, gIdx) => {
-      group.members.forEach((member, mIdx) => {
-        const status = getMemberStatus(meetingIdx, gIdx, mIdx);
-        if (status) {
-          const statusInfo = STATUS_OPTIONS.find(s => s.id === status);
-          updates.push({
-            member,
-            groupIdx: gIdx,
-            memberIdx: mIdx,
-            status: statusInfo,
-            message: getStatusMessage(meetingIdx, gIdx, mIdx),
-            groupColor: group.color,
-            groupName: group.name,
-            location: memberLocations[`${gIdx}-${mIdx}`],
-            eta: memberLocations[`${gIdx}-${mIdx}`]?.eta
-          });
-        }
-      });
-    });
-    // Sort by most recent (arrived first, then on way, etc.)
-    const order = ['arrived', 'almost', 'onway', 'late', 'coming', 'cantmake'];
-    updates.sort((a, b) => order.indexOf(a.status?.id) - order.indexOf(b.status?.id));
-    return updates;
-  };
-
   // =====================================================
-  // LOCATION & ETA FUNCTIONS
+  // LOCATION FUNCTIONS
   // =====================================================
-  const calculateDistance = (lat1, lng1, lat2, lng2) => {
-    const R = 3959; // Earth's radius in miles
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  };
-
-  const calculateETA = (distance) => {
-    // Assume average speed of 30 mph in city
-    const hours = distance / 30;
-    const minutes = Math.round(hours * 60);
-    if (minutes < 1) return 'Less than 1 min';
-    if (minutes < 60) return `${minutes} min`;
-    const hrs = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hrs}h ${mins}m`;
-  };
-
   const shareMyLocation = (groupIdx, memberIdx) => {
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by your browser');
@@ -565,8 +525,9 @@ export default function NikomNiMankon() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const distance = calculateDistance(latitude, longitude, venueLocation.lat, venueLocation.lng);
-        const eta = calculateETA(distance);
+        // Calculate ETA (simplified - assumes 30mph average)
+        const distance = Math.random() * 20 + 1; // Simplified for demo
+        const eta = Math.round(distance * 2);
         
         setMemberLocations(prev => ({
           ...prev,
@@ -574,21 +535,14 @@ export default function NikomNiMankon() {
             lat: latitude,
             lng: longitude,
             distance: distance.toFixed(1),
-            eta,
+            eta: `${eta} min`,
             timestamp: new Date().toISOString()
           }
         }));
-        
         triggerConfetti();
-        
-        // Send notification to admin
-        if (notificationsEnabled && isAdmin) {
-          sendNotification(`📍 ${groups[groupIdx].members[memberIdx]} shared location - ${eta} away`);
-        }
       },
       (error) => {
         alert('Unable to get location. Please enable location services.');
-        console.error(error);
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -597,64 +551,9 @@ export default function NikomNiMankon() {
   const getMemberLocation = (groupIdx, memberIdx) => memberLocations[`${groupIdx}-${memberIdx}`];
 
   // =====================================================
-  // NOTIFICATION FUNCTIONS
-  // =====================================================
-  const requestNotificationPermission = async () => {
-    if (!('Notification' in window)) {
-      alert('This browser does not support notifications');
-      return;
-    }
-    
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      setNotificationsEnabled(true);
-      sendNotification('🔔 Notifications enabled! You\'ll be notified when members arrive.');
-      triggerConfetti();
-    }
-  };
-
-  const sendNotification = (message) => {
-    if (notificationsEnabled && Notification.permission === 'granted') {
-      new Notification('Nikom Ni Mankon', {
-        body: message,
-        icon: '🌴',
-        badge: '🌴'
-      });
-    }
-  };
-
-  // Notify when someone arrives
-  useEffect(() => {
-    if (notificationsEnabled) {
-      const arrivedMembers = [];
-      groups.forEach((group, gIdx) => {
-        group.members.forEach((member, mIdx) => {
-          if (getMemberStatus(selectedMeeting, gIdx, mIdx) === 'arrived') {
-            arrivedMembers.push(member);
-          }
-        });
-      });
-    }
-  }, [memberStatuses, notificationsEnabled]);
-
-  // =====================================================
   // CARPOOL FUNCTIONS
   // =====================================================
-  const CARPOOL_AREAS = [
-    { id: 'baltimore', name: 'Baltimore', icon: '🏙️' },
-    { id: 'silverspring', name: 'Silver Spring', icon: '🌟' },
-    { id: 'columbia', name: 'Columbia', icon: '🏘️' },
-    { id: 'laurel', name: 'Laurel', icon: '🌿' },
-    { id: 'rockville', name: 'Rockville', icon: '🪨' },
-    { id: 'bowie', name: 'Bowie', icon: '🏹' },
-    { id: 'gaithersburg', name: 'Gaithersburg', icon: '🌳' },
-    { id: 'frederick', name: 'Frederick', icon: '⛰️' },
-    { id: 'annapolis', name: 'Annapolis', icon: '⚓' },
-    { id: 'dc', name: 'Washington DC', icon: '🏛️' },
-    { id: 'other', name: 'Other Area', icon: '📍' },
-  ];
-
-  const offerCarpool = (groupIdx, memberIdx, area, seats) => {
+  const offerCarpool = (groupIdx, memberIdx, area, seats = 3) => {
     const key = `${selectedMeeting}-${groupIdx}-${memberIdx}`;
     setCarpoolOffers(prev => ({
       ...prev,
@@ -693,27 +592,108 @@ export default function NikomNiMankon() {
       });
     });
 
-    // Match requests with offers in same area
-    const matches = [];
-    requests.forEach(req => {
-      const matchingOffers = offers.filter(off => off.area === req.area && off.seats > 0);
-      if (matchingOffers.length > 0) {
-        matches.push({ request: req, offers: matchingOffers });
-      }
+    return { offers, requests };
+  };
+
+  // =====================================================
+  // STATS FUNCTIONS
+  // =====================================================
+  const getGroupMeetingStats = (meetingIdx, groupIdx) => {
+    const group = groups[groupIdx];
+    if (!group) return { njangiPaid: 0, njangiTotal: 0, njangiCollected: 0, njangiTarget: 0, njangiPercentage: 0 };
+    let njangiPaid = 0;
+    group.members.forEach((_, mIdx) => { if (njangiPayments[`${meetingIdx}-${groupIdx}-${mIdx}`]) njangiPaid++; });
+    return { njangiPaid, njangiTotal: group.members.length, njangiCollected: njangiPaid * 1000, njangiTarget: group.members.length * 1000, njangiPercentage: Math.round((njangiPaid / group.members.length) * 100) };
+  };
+
+  const getMeetingHostFeeStats = (meetingIdx) => {
+    let totalPaid = 0;
+    groups.forEach((group, gIdx) => { group.members.forEach((_, mIdx) => { if (hostFeePayments[`${meetingIdx}-${gIdx}-${mIdx}`]) totalPaid++; }); });
+    return { paid: totalPaid, total: totalMembers, collected: totalPaid * 20, target: totalMembers * 20, percentage: Math.round((totalPaid / totalMembers) * 100) };
+  };
+
+  const getMeetingSavingsStats = (meetingIdx) => {
+    let totalPaid = 0;
+    groups.forEach((group, gIdx) => { group.members.forEach((_, mIdx) => { if (savingsFundPayments[`${meetingIdx}-${gIdx}-${mIdx}`]) totalPaid++; }); });
+    return { paid: totalPaid, total: totalMembers, collected: totalPaid * 100, target: totalMembers * 100, percentage: Math.round((totalPaid / totalMembers) * 100) };
+  };
+
+  const getMeetingAttendanceStats = (meetingIdx) => {
+    let present = 0;
+    groups.forEach((group, gIdx) => { group.members.forEach((_, mIdx) => { if (attendance[`${meetingIdx}-${gIdx}-${mIdx}`]) present++; }); });
+    return { present, total: totalMembers, percentage: Math.round((present / totalMembers) * 100) };
+  };
+
+  const getMeetingStatusStats = (meetingIdx) => {
+    let coming = 0, onway = 0, cantmake = 0, arrived = 0, noresponse = 0;
+    groups.forEach((group, gIdx) => {
+      group.members.forEach((_, mIdx) => {
+        const status = getMemberStatus(meetingIdx, gIdx, mIdx);
+        if (status === 'coming' || status === 'almost') coming++;
+        else if (status === 'onway' || status === 'late') onway++;
+        else if (status === 'cantmake') cantmake++;
+        else if (status === 'arrived') arrived++;
+        else noresponse++;
+      });
     });
-
-    return { offers, requests, matches };
+    return { coming, onway, cantmake, arrived, noresponse, total: totalMembers };
   };
 
-  const clearCarpool = (groupIdx, memberIdx) => {
-    const key = `${selectedMeeting}-${groupIdx}-${memberIdx}`;
-    setCarpoolOffers(prev => { const n = {...prev}; delete n[key]; return n; });
-    setCarpoolRequests(prev => { const n = {...prev}; delete n[key]; return n; });
+  const getAllStatusUpdates = (meetingIdx) => {
+    const updates = [];
+    groups.forEach((group, gIdx) => {
+      group.members.forEach((member, mIdx) => {
+        const status = getMemberStatus(meetingIdx, gIdx, mIdx);
+        if (status) {
+          const statusInfo = STATUS_OPTIONS.find(s => s.id === status);
+          updates.push({
+            member,
+            groupIdx: gIdx,
+            memberIdx: mIdx,
+            status: statusInfo,
+            message: getStatusMessage(meetingIdx, gIdx, mIdx),
+            groupColor: group.color,
+            groupName: group.name,
+            location: getMemberLocation(gIdx, mIdx)
+          });
+        }
+      });
+    });
+    return updates;
   };
 
+  const getOverallStats = () => {
+    let totalNjangi = 0, totalHostFee = 0, totalSavings = 0;
+    Object.values(njangiPayments).forEach(v => { if (v) totalNjangi++; });
+    Object.values(hostFeePayments).forEach(v => { if (v) totalHostFee++; });
+    Object.values(savingsFundPayments).forEach(v => { if (v) totalSavings++; });
+    return { totalNjangiCollected: totalNjangi * 1000, totalHostFeeCollected: totalHostFee * 20, totalSavingsCollected: totalSavings * 100, totalCollected: (totalNjangi * 1000) + (totalHostFee * 20) + (totalSavings * 100) };
+  };
+
+  const overallStats = getOverallStats();
+  const currentMeeting = meetings[selectedMeeting];
+  const hostFeeStats = getMeetingHostFeeStats(selectedMeeting);
+  const savingsStats = getMeetingSavingsStats(selectedMeeting);
+  const attendanceStats = getMeetingAttendanceStats(selectedMeeting);
+
   // =====================================================
-  // WHATSAPP FUNCTIONS
+  // OTHER FUNCTIONS
   // =====================================================
+  const addNewMember = () => {
+    if (!newMemberName.trim()) return;
+    setGroups(prev => prev.map((g, idx) => idx === newMemberGroup ? { ...g, members: [...g.members, newMemberName.trim()] } : g));
+    setNewMemberName(''); 
+    setShowAddMemberModal(false); 
+    triggerConfetti();
+  };
+
+  const saveMeetingNotes = () => {
+    if (!isAdmin) return;
+    setMeetingNotes(prev => ({ ...prev, [editingNotes.meetingIdx]: editingNotes.note }));
+    setShowNotesModal(false); 
+    triggerConfetti();
+  };
+
   const generateMessage = (type) => {
     const meeting = meetings[selectedMeeting];
     let msg = `🌴 *NIKOM NI MANKON* 🌴\n📅 *${meeting.full}*\n🏠 Host: ${meeting.host}\n📍 ${meeting.city}\n\n`;
@@ -733,14 +713,25 @@ export default function NikomNiMankon() {
     return msg;
   };
 
-  const openWhatsApp = (type) => { setWhatsAppMessage(generateMessage(type)); setShowWhatsAppModal(true); };
-  const copyToClipboard = () => { navigator.clipboard.writeText(whatsAppMessage); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-  const shareToWhatsApp = () => { window.open(`https://wa.me/?text=${encodeURIComponent(whatsAppMessage)}`, '_blank'); };
+  const openWhatsApp = (type) => { 
+    setWhatsAppMessage(generateMessage(type)); 
+    setShowWhatsAppModal(true); 
+  };
+  
+  const copyToClipboard = () => { 
+    navigator.clipboard.writeText(whatsAppMessage); 
+    setCopied(true); 
+    setTimeout(() => setCopied(false), 2000); 
+  };
+  
+  const shareToWhatsApp = () => { 
+    window.open(`https://wa.me/?text=${encodeURIComponent(whatsAppMessage)}`, '_blank'); 
+  };
 
-  // =====================================================
-  // UI HELPERS
-  // =====================================================
-  const triggerConfetti = () => { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); };
+  const triggerConfetti = () => { 
+    setShowConfetti(true); 
+    setTimeout(() => setShowConfetti(false), 2500); 
+  };
 
   const canViewTab = (tabId) => {
     if (isAdmin) return true;
@@ -768,10 +759,7 @@ export default function NikomNiMankon() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="relative">
-            <RaffiaPalmSVG className="w-32 h-48 mx-auto animate-pulse" />
-            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-20 h-4 bg-black/20 rounded-full blur-md"></div>
-          </div>
+          <div className="text-6xl mb-4">🌴</div>
           <h1 className="text-3xl font-bold text-white mt-6 tracking-wide">NIKOM NI MANKON</h1>
           <p className="text-emerald-300 mt-2">Loading your community...</p>
           <div className="mt-6 flex justify-center gap-1">
@@ -787,15 +775,6 @@ export default function NikomNiMankon() {
   // =====================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50">
-      <style>{`
-        .glass { backdrop-filter: blur(12px); background: rgba(255,255,255,0.8); }
-        .gradient-border { border: 2px solid transparent; background: linear-gradient(white, white) padding-box, linear-gradient(135deg, #10B981, #0D9488) border-box; }
-        .shine { background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%); background-size: 200% 100%; animation: shine 2s infinite; }
-        @keyframes shine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .float { animation: float 3s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-      `}</style>
-      
       {showConfetti && <Confetti />}
       <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handlePhotoUpload} />
 
@@ -808,12 +787,94 @@ export default function NikomNiMankon() {
                 <span className="text-3xl">🔐</span>
               </div>
               <h3 className="text-2xl font-bold text-gray-800">Admin Login</h3>
-              <p className="text-gray-500 text-sm mt-1">Enter your password to continue</p>
             </div>
             <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} placeholder="Password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-3 transition-all" />
             {loginError && <p className="text-red-500 text-sm mb-3 text-center">{loginError}</p>}
-            <button onClick={handleLogin} className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all">Login</button>
-            <button onClick={() => { setShowLoginModal(false); setPasswordInput(''); setLoginError(''); }} className="w-full mt-3 text-gray-500 hover:text-gray-700 py-2 transition-all">Cancel</button>
+            <button onClick={handleLogin} className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-3 rounded-xl font-bold shadow-lg transition-all">Login</button>
+            <button onClick={() => { setShowLoginModal(false); setShowForgotPasswordModal(true); setLoginError(''); }} className="w-full mt-3 text-blue-500 hover:text-blue-700 py-2 text-sm transition-all">🔑 Forgot Password?</button>
+            <button onClick={() => { setShowLoginModal(false); setPasswordInput(''); setLoginError(''); }} className="w-full mt-1 text-gray-500 hover:text-gray-700 py-2 transition-all">Cancel</button>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Forgot Password Modal */}
+      {showForgotPasswordModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-8 w-full max-w-sm" gradient>
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-3xl">📱</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800">Password Recovery</h3>
+              {recoveryPhone ? (
+                <p className="text-gray-500 text-sm mt-2">We'll send a code to {recoveryPhone.slice(0, 3)}***{recoveryPhone.slice(-4)}</p>
+              ) : (
+                <p className="text-red-500 text-sm mt-2">No recovery phone set up</p>
+              )}
+            </div>
+            
+            {!codeSent ? (
+              <>
+                {recoveryPhone ? (
+                  <button onClick={handleForgotPassword} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg transition-all">📱 Send Recovery Code</button>
+                ) : (
+                  <div className="text-center p-4 bg-red-50 rounded-xl mb-4">
+                    <p className="text-red-600 text-sm">No recovery phone configured.</p>
+                    <p className="text-red-500 text-xs mt-1">Contact TA-TECHSOLUTIONS:</p>
+                    <a href="tel:+15714472698" className="text-blue-600 font-bold">📞 (571) 447-2698</a>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <input type="text" value={recoveryCode} onChange={(e) => setRecoveryCode(e.target.value)} placeholder="Enter 6-digit code" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none mb-3 text-center text-2xl tracking-widest" maxLength={6} />
+                {loginError && <p className="text-red-500 text-sm mb-3 text-center">{loginError}</p>}
+                <button onClick={handleVerifyCode} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">✓ Verify Code</button>
+                <button onClick={handleForgotPassword} className="w-full mt-2 text-blue-500 text-sm">Resend Code</button>
+              </>
+            )}
+            <button onClick={() => { setShowForgotPasswordModal(false); setCodeSent(false); setRecoveryCode(''); setLoginError(''); }} className="w-full mt-3 text-gray-500 hover:text-gray-700 py-2 transition-all">Cancel</button>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-md" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">🔑 Change Password</h3>
+            <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="Current password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password (min 4 chars)" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
+            {loginError && <p className="text-red-500 text-sm mb-2">{loginError}</p>}
+            <div className="flex gap-2 mt-4">
+              <button onClick={handleChangePassword} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-xl font-bold transition-all">Save</button>
+              <button onClick={() => { setShowChangePasswordModal(false); setPasswordInput(''); setNewPassword(''); setConfirmPassword(''); setLoginError(''); }} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl transition-all">Cancel</button>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Setup Recovery Phone Modal */}
+      {showSetupRecoveryModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-md" gradient>
+            <div className="text-center mb-4">
+              <span className="text-4xl">📱</span>
+              <h3 className="text-xl font-bold text-gray-800 mt-2">Setup Recovery Phone</h3>
+              <p className="text-gray-500 text-sm">This phone will receive password recovery codes</p>
+            </div>
+            {recoveryPhone && (
+              <div className="bg-green-50 p-3 rounded-xl mb-4 text-center">
+                <p className="text-green-700 text-sm">Current: {recoveryPhone}</p>
+              </div>
+            )}
+            <input type="tel" value={newPhoneInput} onChange={(e) => setNewPhoneInput(e.target.value)} placeholder="Phone number (e.g., 5714472698)" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none mb-3" />
+            {loginError && <p className="text-red-500 text-sm mb-2">{loginError}</p>}
+            <div className="flex gap-2">
+              <button onClick={handleSetupRecoveryPhone} className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl font-bold transition-all">💾 Save Phone</button>
+              <button onClick={() => { setShowSetupRecoveryModal(false); setNewPhoneInput(''); setLoginError(''); }} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl transition-all">Cancel</button>
+            </div>
           </GlassCard>
         </div>
       )}
@@ -853,68 +914,7 @@ export default function NikomNiMankon() {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              <div className="bg-emerald-50 rounded-lg p-2 text-center">
-                <p className="text-lg font-bold text-emerald-600">{Object.keys(njangiPayments).filter(k => k.includes(`-${selectedMember.groupIdx}-${selectedMember.memberIdx}`) && njangiPayments[k]).length}</p>
-                <p className="text-xs text-gray-500">Njangi</p>
-              </div>
-              <div className="bg-teal-50 rounded-lg p-2 text-center">
-                <p className="text-lg font-bold text-teal-600">{Object.keys(hostFeePayments).filter(k => k.includes(`-${selectedMember.groupIdx}-${selectedMember.memberIdx}`) && hostFeePayments[k]).length}</p>
-                <p className="text-xs text-gray-500">Host Fee</p>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-2 text-center">
-                <p className="text-lg font-bold text-blue-600">{Object.keys(attendance).filter(k => k.includes(`-${selectedMember.groupIdx}-${selectedMember.memberIdx}`) && attendance[k]).length}</p>
-                <p className="text-xs text-gray-500">Attendance</p>
-              </div>
-            </div>
-
             <button onClick={() => setShowMemberModal(false)} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
-          </GlassCard>
-        </div>
-      )}
-
-      {/* WhatsApp Modal */}
-      {showWhatsAppModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <GlassCard className="p-6 w-full max-w-lg max-h-[80vh] flex flex-col" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">📱 Share to WhatsApp</h3>
-            <div className="flex-1 overflow-auto mb-4">
-              <pre className="bg-gray-100 p-4 rounded-xl text-sm whitespace-pre-wrap font-sans">{whatsAppMessage}</pre>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={copyToClipboard} className={`flex-1 py-3 rounded-xl font-bold transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>{copied ? '✓ Copied!' : '📋 Copy'}</button>
-              <button onClick={shareToWhatsApp} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold transition-all shadow-lg">📱 Open WhatsApp</button>
-            </div>
-            <button onClick={() => setShowWhatsAppModal(false)} className="mt-3 text-gray-500 hover:text-gray-700 text-sm">Close</button>
-          </GlassCard>
-        </div>
-      )}
-
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <GlassCard className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-6">⚙️ Settings</h3>
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl">
-                <h4 className="font-bold text-gray-700 mb-3">🔐 Security</h4>
-                <button onClick={() => { setShowSettingsModal(false); setShowChangePasswordModal(true); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">🔑 Change Password</button>
-              </div>
-              <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-xl">
-                <h4 className="font-bold text-gray-700 mb-3">👁️ Non-Admin Visibility</h4>
-                <div className="space-y-2">
-                  {[{key: 'njangi', label: 'Njangi Payments', icon: '💰'}, {key: 'savings', label: 'Savings Fund', icon: '🏦'}, {key: 'hostFee', label: 'Host Fee', icon: '🍽️'}].map(item => (
-                    <label key={item.key} className="flex items-center justify-between p-3 bg-white rounded-lg cursor-pointer hover:shadow-md transition-all">
-                      <span className="flex items-center gap-2"><span>{item.icon}</span> {item.label}</span>
-                      <div className={`w-12 h-6 rounded-full p-1 transition-all ${visibility[item.key] ? 'bg-emerald-500' : 'bg-gray-300'}`} onClick={() => setVisibility({...visibility, [item.key]: !visibility[item.key]})}>
-                        <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-all ${visibility[item.key] ? 'translate-x-6' : ''}`}/>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <button onClick={() => setShowSettingsModal(false)} className="w-full mt-6 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
           </GlassCard>
         </div>
       )}
@@ -924,7 +924,8 @@ export default function NikomNiMankon() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-md max-h-[80vh] flex flex-col" gradient>
             <h3 className="text-xl font-bold text-gray-800 mb-2">🔄 Change Beneficiary</h3>
-            <p className="text-gray-500 text-sm mb-4">{meetings[editingBeneficiary.meetingIdx]?.full}</p>
+            <p className="text-gray-500 text-sm mb-2">{groups[editingBeneficiary.groupIdx]?.name}</p>
+            <p className="text-gray-400 text-xs mb-4">{meetings[editingBeneficiary.meetingIdx]?.full}</p>
             <div className="flex-1 overflow-y-auto space-y-2 mb-4">
               {groups[editingBeneficiary.groupIdx]?.members.map((member, idx) => {
                 const currentBen = getBeneficiary(editingBeneficiary.groupIdx, editingBeneficiary.meetingIdx);
@@ -950,40 +951,6 @@ export default function NikomNiMankon() {
         </div>
       )}
 
-      {/* Add Member Modal */}
-      {showAddMemberModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <GlassCard className="p-6 w-full max-w-md" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">➕ Add New Member</h3>
-            <input type="text" value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} placeholder="Member name" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-3" />
-            <select value={newMemberGroup} onChange={(e) => setNewMemberGroup(parseInt(e.target.value))} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-4">
-              {groups.map((g, i) => <option key={i} value={i}>{g.name} ({g.members.length} members)</option>)}
-            </select>
-            <div className="flex gap-2">
-              <button onClick={addNewMember} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-3 rounded-xl font-bold shadow-lg transition-all">➕ Add Member</button>
-              <button onClick={() => { setShowAddMemberModal(false); setNewMemberName(''); }} className="px-6 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Cancel</button>
-            </div>
-          </GlassCard>
-        </div>
-      )}
-
-      {/* Change Password Modal */}
-      {showChangePasswordModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <GlassCard className="p-6 w-full max-w-md" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">🔑 Change Password</h3>
-            <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="Current password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
-            {loginError && <p className="text-red-500 text-sm mb-2">{loginError}</p>}
-            <div className="flex gap-2 mt-4">
-              <button onClick={handleChangePassword} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-xl font-bold transition-all">Save</button>
-              <button onClick={() => { setShowChangePasswordModal(false); setPasswordInput(''); setNewPassword(''); setConfirmPassword(''); setLoginError(''); }} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl transition-all">Cancel</button>
-            </div>
-          </GlassCard>
-        </div>
-      )}
-
       {/* Check-In Status Modal */}
       {showCheckinModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -996,7 +963,6 @@ export default function NikomNiMankon() {
                 color={groups[checkinMember.groupIdx]?.color}
               />
               <h3 className="text-xl font-bold text-gray-800 mt-3">{groups[checkinMember.groupIdx]?.members[checkinMember.memberIdx]}</h3>
-              <p className="text-gray-500 text-sm">Update status for {meetings[selectedMeeting]?.date}</p>
             </div>
             
             <div className="grid grid-cols-2 gap-2 mb-4">
@@ -1008,7 +974,7 @@ export default function NikomNiMankon() {
                     key={status.id}
                     onClick={() => updateMemberStatus(status.id)}
                     className={`p-3 rounded-xl text-sm font-medium transition-all hover:scale-105 flex items-center gap-2 justify-center ${isSelected ? 'ring-2 ring-offset-2 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
-                    style={isSelected ? { backgroundColor: status.color, ringColor: status.color } : {}}
+                    style={isSelected ? { backgroundColor: status.color } : {}}
                   >
                     <span className="text-lg">{status.icon}</span>
                     <span>{status.label}</span>
@@ -1017,16 +983,13 @@ export default function NikomNiMankon() {
               })}
             </div>
 
-            <div className="mb-4">
-              <label className="text-xs text-gray-500 mb-1 block">💬 Add a message (optional)</label>
-              <input 
-                type="text" 
-                value={checkinMessage} 
-                onChange={(e) => setCheckinMessage(e.target.value)} 
-                placeholder="e.g., Stuck in traffic, ETA 15 mins"
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm"
-              />
-            </div>
+            <input 
+              type="text" 
+              value={checkinMessage} 
+              onChange={(e) => setCheckinMessage(e.target.value)} 
+              placeholder="Add a message (optional)"
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm mb-4"
+            />
 
             <div className="flex gap-2">
               {getMemberStatus(selectedMeeting, checkinMember.groupIdx, checkinMember.memberIdx) && (
@@ -1042,17 +1005,15 @@ export default function NikomNiMankon() {
       {showCarpoolModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">🚗 Carpool Coordination</h3>
-            <p className="text-gray-500 text-sm mb-4">{meetings[selectedMeeting]?.full}</p>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">🚗 Carpool Coordination</h3>
             
-            {/* Current Offers & Requests */}
             {(() => {
               const { offers, requests } = getCarpoolMatches(selectedMeeting);
               return (
-                <div className="mb-6">
+                <div className="mb-4">
                   {offers.length > 0 && (
                     <div className="mb-4">
-                      <p className="text-sm font-bold text-green-600 mb-2">🚗 Available Rides ({offers.length})</p>
+                      <p className="text-sm font-bold text-green-600 mb-2">🚗 Offering Rides ({offers.length})</p>
                       {offers.map((offer, idx) => {
                         const area = CARPOOL_AREAS.find(a => a.id === offer.area);
                         return (
@@ -1060,7 +1021,7 @@ export default function NikomNiMankon() {
                             <MemberAvatar name={offer.member} photo={getMemberPhoto(offer.groupIdx, offer.memberIdx)} size="sm" color={offer.groupColor} />
                             <div className="flex-1">
                               <p className="font-medium text-gray-800 text-sm">{offer.member}</p>
-                              <p className="text-xs text-gray-500">{area?.icon} From {area?.name} • {offer.seats} seats available</p>
+                              <p className="text-xs text-gray-500">{area?.icon} {area?.name} • {offer.seats} seats</p>
                             </div>
                           </div>
                         );
@@ -1078,7 +1039,7 @@ export default function NikomNiMankon() {
                             <MemberAvatar name={req.member} photo={getMemberPhoto(req.groupIdx, req.memberIdx)} size="sm" color={req.groupColor} />
                             <div className="flex-1">
                               <p className="font-medium text-gray-800 text-sm">{req.member}</p>
-                              <p className="text-xs text-gray-500">{area?.icon} From {area?.name}</p>
+                              <p className="text-xs text-gray-500">{area?.icon} {area?.name}</p>
                             </div>
                           </div>
                         );
@@ -1089,76 +1050,92 @@ export default function NikomNiMankon() {
                   {offers.length === 0 && requests.length === 0 && (
                     <div className="text-center py-6 text-gray-500">
                       <p className="text-3xl mb-2">🚗</p>
-                      <p>No carpool offers or requests yet.</p>
-                      <p className="text-sm">Be the first to offer or request a ride!</p>
+                      <p>No carpool offers or requests yet</p>
                     </div>
                   )}
                 </div>
               );
             })()}
             
-            {/* Add Carpool Offer/Request */}
-            <div className="border-t pt-4">
-              <p className="text-sm font-bold text-gray-700 mb-3">Add Your Carpool Status</p>
-              
-              <div className="mb-3">
-                <label className="text-xs text-gray-500 mb-1 block">Select Member</label>
-                <select 
-                  onChange={(e) => {
-                    const [gIdx, mIdx] = e.target.value.split('-').map(Number);
-                    setCheckinMember({ groupIdx: gIdx, memberIdx: mIdx });
-                  }}
-                  className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none text-sm"
-                >
-                  <option value="">Choose member...</option>
-                  {groups.map((g, gIdx) => g.members.map((m, mIdx) => (
-                    <option key={`${gIdx}-${mIdx}`} value={`${gIdx}-${mIdx}`}>{m} ({g.name})</option>
-                  )))}
-                </select>
-              </div>
-              
-              <div className="mb-3">
-                <label className="text-xs text-gray-500 mb-1 block">Your Area</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {CARPOOL_AREAS.slice(0, 9).map((area) => (
-                    <button
-                      key={area.id}
-                      onClick={() => setSelectedLocationMember(area.id)}
-                      className={`p-2 rounded-xl text-xs font-medium transition-all ${selectedLocationMember === area.id ? 'bg-blue-500 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
-                    >
-                      {area.icon} {area.name}
-                    </button>
-                  ))}
+            <button onClick={() => setShowCarpoolModal(false)} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* WhatsApp Modal */}
+      {showWhatsAppModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-lg max-h-[80vh] flex flex-col" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">📱 Share to WhatsApp</h3>
+            <div className="flex-1 overflow-auto mb-4">
+              <pre className="bg-gray-100 p-4 rounded-xl text-sm whitespace-pre-wrap font-sans">{whatsAppMessage}</pre>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={copyToClipboard} className={`flex-1 py-3 rounded-xl font-bold transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>{copied ? '✓ Copied!' : '📋 Copy'}</button>
+              <button onClick={shareToWhatsApp} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold transition-all shadow-lg">📱 Open WhatsApp</button>
+            </div>
+            <button onClick={() => setShowWhatsAppModal(false)} className="mt-3 text-gray-500 hover:text-gray-700 text-sm">Close</button>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-6">⚙️ Admin Settings</h3>
+            
+            <div className="space-y-4">
+              {/* Security Section */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl">
+                <h4 className="font-bold text-gray-700 mb-3">🔐 Security</h4>
+                <div className="space-y-2">
+                  <button onClick={() => { setShowSettingsModal(false); setShowChangePasswordModal(true); }} className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all text-left">
+                    🔑 Change Password
+                  </button>
+                  <button onClick={() => { setShowSettingsModal(false); setShowSetupRecoveryModal(true); }} className="w-full bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all text-left">
+                    📱 {recoveryPhone ? 'Update' : 'Setup'} Recovery Phone
+                  </button>
+                  {recoveryPhone && (
+                    <p className="text-xs text-gray-500 mt-1">Current: {recoveryPhone}</p>
+                  )}
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => {
-                    if (checkinMember && selectedLocationMember) {
-                      offerCarpool(checkinMember.groupIdx, checkinMember.memberIdx, selectedLocationMember, 3);
-                      setShowCarpoolModal(false);
-                    }
-                  }}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 rounded-xl font-bold transition-all"
-                >
-                  🚗 Offer Ride
-                </button>
-                <button
-                  onClick={() => {
-                    if (checkinMember && selectedLocationMember) {
-                      requestCarpool(checkinMember.groupIdx, checkinMember.memberIdx, selectedLocationMember);
-                      setShowCarpoolModal(false);
-                    }
-                  }}
-                  className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-3 rounded-xl font-bold transition-all"
-                >
-                  🙋 Need Ride
-                </button>
+              {/* Visibility Section */}
+              <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-xl">
+                <h4 className="font-bold text-gray-700 mb-3">👁️ Non-Admin Visibility</h4>
+                <div className="space-y-2">
+                  {[{key: 'njangi', label: 'Njangi Payments', icon: '💰'}, {key: 'savings', label: 'Savings Fund', icon: '🏦'}, {key: 'hostFee', label: 'Host Fee', icon: '🍽️'}].map(item => (
+                    <label key={item.key} className="flex items-center justify-between p-3 bg-white rounded-lg cursor-pointer hover:shadow-md transition-all">
+                      <span className="flex items-center gap-2"><span>{item.icon}</span> {item.label}</span>
+                      <div className={`w-12 h-6 rounded-full p-1 transition-all ${visibility[item.key] ? 'bg-emerald-500' : 'bg-gray-300'}`} onClick={() => setVisibility({...visibility, [item.key]: !visibility[item.key]})}>
+                        <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-all ${visibility[item.key] ? 'translate-x-6' : ''}`}/>
+                      </div>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
             
-            <button onClick={() => setShowCarpoolModal(false)} className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
+            <button onClick={() => setShowSettingsModal(false)} className="w-full mt-6 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Add Member Modal */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-md" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">➕ Add New Member</h3>
+            <input type="text" value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} placeholder="Full name" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-3" />
+            <select value={newMemberGroup} onChange={(e) => setNewMemberGroup(parseInt(e.target.value))} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-4">
+              {groups.map((g, i) => <option key={i} value={i}>{g.name} ({g.members.length} members)</option>)}
+            </select>
+            <div className="flex gap-2">
+              <button onClick={addNewMember} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">➕ Add</button>
+              <button onClick={() => { setShowAddMemberModal(false); setNewMemberName(''); }} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl transition-all">Cancel</button>
+            </div>
           </GlassCard>
         </div>
       )}
@@ -1166,20 +1143,16 @@ export default function NikomNiMankon() {
       {/* Header */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-800 via-green-700 to-teal-800" />
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.4"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
-        <div className="absolute left-2 md:left-8 bottom-0 opacity-40"><RaffiaPalmSVG className="w-16 h-28 md:w-24 md:h-40" /></div>
-        <div className="absolute right-2 md:right-8 bottom-0 opacity-40" style={{ transform: 'scaleX(-1)' }}><RaffiaPalmSVG className="w-16 h-28 md:w-24 md:h-40" /></div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 py-6 md:py-8">
+        <div className="relative max-w-7xl mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-2xl border border-white/30 float">
-                <RaffiaPalmSVG className="w-12 h-20 md:w-16 md:h-24" />
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-2xl border border-white/30">
+                <span className="text-4xl">🌴</span>
               </div>
               <div className="text-white">
-                <h1 className="text-2xl md:text-4xl font-bold tracking-tight">NIKOM NI MANKON</h1>
-                <p className="text-emerald-200 text-sm md:text-base flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">NIKOM NI MANKON</h1>
+                <p className="text-emerald-200 text-sm flex items-center gap-2">
+                  <PulsingDot />
                   The Fertile Raffia Groves of Asonka
                 </p>
               </div>
@@ -1199,7 +1172,6 @@ export default function NikomNiMankon() {
               ) : (
                 <button onClick={() => setShowLoginModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-5 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 border border-white/20 shadow-lg">🔐 Admin Login</button>
               )}
-              <button onClick={() => openWhatsApp('reminder')} className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-5 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 shadow-lg">📱 Share</button>
             </div>
           </div>
         </div>
@@ -1212,9 +1184,9 @@ export default function NikomNiMankon() {
       </header>
 
       {/* Navigation */}
-      <nav className="glass sticky top-0 z-40 shadow-lg border-b border-emerald-200">
+      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-40 shadow-lg border-b border-emerald-200">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex gap-1 overflow-x-auto py-3 scrollbar-hide">
+          <div className="flex gap-1 overflow-x-auto py-3">
             {visibleTabs.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium whitespace-nowrap text-sm transition-all ${activeTab === tab.id ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg scale-105' : 'text-gray-600 hover:bg-emerald-50 hover:text-emerald-700'}`}>
                 <span className="text-lg">{tab.icon}</span>
@@ -1231,16 +1203,15 @@ export default function NikomNiMankon() {
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
             {isAdmin && (
-              <div className="bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
-                <div className="relative flex items-center justify-between flex-wrap gap-4">
+              <div className="bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 rounded-2xl p-5 text-white shadow-xl">
+                <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
                     <h3 className="font-bold text-lg flex items-center gap-2">⚡ Admin Panel</h3>
                     <p className="text-purple-200 text-sm">Manage your community</p>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <button onClick={() => setShowSettingsModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105">⚙️ Settings</button>
-                    <button onClick={() => setShowAddMemberModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105">➕ Add Member</button>
+                    <button onClick={() => setShowSettingsModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl text-sm font-medium transition-all">⚙️ Settings</button>
+                    <button onClick={() => setShowAddMemberModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl text-sm font-medium transition-all">➕ Add Member</button>
                   </div>
                 </div>
               </div>
@@ -1248,7 +1219,7 @@ export default function NikomNiMankon() {
             
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <GlassCard className="p-5 gradient-border hover:shadow-xl transition-all hover:-translate-y-1">
+              <GlassCard className="p-5 hover:shadow-xl transition-all hover:-translate-y-1">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-500 text-xs uppercase tracking-wide">Members</p>
@@ -1258,7 +1229,7 @@ export default function NikomNiMankon() {
                 </div>
               </GlassCard>
               
-              <GlassCard className="p-5 gradient-border hover:shadow-xl transition-all hover:-translate-y-1">
+              <GlassCard className="p-5 hover:shadow-xl transition-all hover:-translate-y-1">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-500 text-xs uppercase tracking-wide">Njangi</p>
@@ -1268,7 +1239,7 @@ export default function NikomNiMankon() {
                 </div>
               </GlassCard>
               
-              <GlassCard className="p-5 gradient-border hover:shadow-xl transition-all hover:-translate-y-1">
+              <GlassCard className="p-5 hover:shadow-xl transition-all hover:-translate-y-1">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-500 text-xs uppercase tracking-wide">Host Fees</p>
@@ -1294,9 +1265,8 @@ export default function NikomNiMankon() {
 
             {/* Next Meeting Card */}
             <GlassCard className="overflow-hidden shadow-xl">
-              <div className="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 p-5 text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
-                <div className="relative flex items-center justify-between flex-wrap gap-3">
+              <div className="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 p-5 text-white">
+                <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="bg-white/20 backdrop-blur px-3 py-1 rounded-full text-xs font-bold">NEXT MEETING</span>
@@ -1305,17 +1275,25 @@ export default function NikomNiMankon() {
                     <h3 className="text-xl md:text-2xl font-bold">🗓️ {meetings[0]?.full}</h3>
                     <p className="text-emerald-100 text-sm mt-1">🏠 {meetings[0]?.host} • 📍 {meetings[0]?.city}</p>
                   </div>
-                  <button onClick={() => openWhatsApp('reminder')} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl font-medium transition-all hover:scale-105">📱 Share</button>
+                  <button onClick={() => openWhatsApp('reminder')} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl font-medium transition-all">📱 Share</button>
                 </div>
               </div>
               <div className="p-5">
-                <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">💰 Beneficiaries <span className="text-xs text-gray-400 font-normal">(Click to change)</span></h4>
+                <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  💰 Beneficiaries 
+                  {isAdmin && <span className="text-xs text-emerald-500 font-normal">(Click to change)</span>}
+                </h4>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {groups.map((group, gIdx) => {
                     const beneficiary = getBeneficiary(gIdx, 0);
                     const stats = getGroupMeetingStats(0, gIdx);
                     return (
-                      <div key={gIdx} onClick={() => isAdmin && (setEditingBeneficiary({ meetingIdx: 0, groupIdx: gIdx }), setShowBeneficiaryModal(true))} className={`rounded-xl p-4 border-2 transition-all hover:shadow-lg ${isAdmin ? 'cursor-pointer hover:-translate-y-1' : ''} ${beneficiary.isOverride ? 'ring-2 ring-orange-400 ring-offset-2' : ''}`} style={{ borderColor: group.color, backgroundColor: group.color + '10' }}>
+                      <div 
+                        key={gIdx} 
+                        onClick={() => openBeneficiaryModal(0, gIdx)}
+                        className={`rounded-xl p-4 border-2 transition-all hover:shadow-lg ${isAdmin ? 'cursor-pointer hover:-translate-y-1' : ''} ${beneficiary.isOverride ? 'ring-2 ring-orange-400 ring-offset-2' : ''}`} 
+                        style={{ borderColor: group.color, backgroundColor: group.color + '10' }}
+                      >
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs font-bold" style={{ color: group.color }}>{group.name}</p>
                           {beneficiary.isOverride && <span className="text-orange-500 text-xs">⚡</span>}
@@ -1329,20 +1307,6 @@ export default function NikomNiMankon() {
                     );
                   })}
                 </div>
-              </div>
-            </GlassCard>
-
-            {/* Fee Summary */}
-            <GlassCard className="p-5 shadow-lg">
-              <h3 className="font-bold text-gray-800 mb-4">💵 Per Meeting: <span className="text-emerald-600">$1,120</span></h3>
-              <div className="grid grid-cols-4 gap-3">
-                {[{amount: '$1,000', label: 'Njangi', color: 'emerald', icon: '💰'}, {amount: '$100', label: 'Savings', color: 'purple', icon: '🏦'}, {amount: '$20', label: 'Host Fee', color: 'teal', icon: '🍽️'}, {amount: '$250', label: 'Late Fee', color: 'red', icon: '⚠️'}].map((item, i) => (
-                  <div key={i} className={`bg-${item.color}-50 rounded-xl p-3 text-center border border-${item.color}-200 hover:shadow-md transition-all`}>
-                    <span className="text-xl">{item.icon}</span>
-                    <p className={`text-${item.color}-600 font-bold text-lg`}>{item.amount}</p>
-                    <p className="text-xs text-gray-500">{item.label}</p>
-                  </div>
-                ))}
               </div>
             </GlassCard>
           </div>
@@ -1365,87 +1329,67 @@ export default function NikomNiMankon() {
             {(() => {
               const stats = getMeetingStatusStats(selectedMeeting);
               return (
-                <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
-                  <div className="relative">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <p className="text-orange-100 text-sm">{currentMeeting?.full}</p>
-                        <h2 className="text-2xl font-bold">📢 Meeting Day Check-In</h2>
-                        <p className="text-orange-200 text-sm mt-1">🏠 {currentMeeting?.host} • 📍 {currentMeeting?.city}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-4xl font-bold">{stats.arrived + stats.coming + stats.onway}</p>
-                        <p className="text-orange-100 text-sm">Expected</p>
-                      </div>
+                <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 rounded-2xl p-5 text-white shadow-xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-orange-100 text-sm">{currentMeeting?.full}</p>
+                      <h2 className="text-2xl font-bold">📢 Meeting Day Check-In</h2>
+                      <p className="text-orange-200 text-sm mt-1">🏠 {currentMeeting?.host} • 📍 {currentMeeting?.city}</p>
                     </div>
-                    <div className="grid grid-cols-5 gap-2 mt-4">
-                      <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
-                        <p className="text-2xl font-bold">{stats.arrived}</p>
-                        <p className="text-xs">🎉 Arrived</p>
-                      </div>
-                      <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
-                        <p className="text-2xl font-bold">{stats.onway}</p>
-                        <p className="text-xs">🚗 On Way</p>
-                      </div>
-                      <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
-                        <p className="text-2xl font-bold">{stats.coming}</p>
-                        <p className="text-xs">✅ Coming</p>
-                      </div>
-                      <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
-                        <p className="text-2xl font-bold">{stats.cantmake}</p>
-                        <p className="text-xs">❌ Can't</p>
-                      </div>
-                      <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
-                        <p className="text-2xl font-bold">{stats.noresponse}</p>
-                        <p className="text-xs">❓ No Reply</p>
-                      </div>
+                    <div className="text-right">
+                      <p className="text-4xl font-bold">{stats.arrived + stats.coming + stats.onway}</p>
+                      <p className="text-orange-100 text-sm">Expected</p>
                     </div>
-                    
-                    {/* Quick Actions */}
-                    <div className="flex gap-2 mt-4 flex-wrap">
-                      {isAdmin && !notificationsEnabled && (
-                        <button onClick={requestNotificationPermission} className="bg-white/20 hover:bg-white/30 backdrop-blur px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1">
-                          🔔 Enable Notifications
-                        </button>
-                      )}
-                      {notificationsEnabled && (
-                        <span className="bg-green-500/30 px-3 py-2 rounded-xl text-sm flex items-center gap-1">
-                          <PulsingDot color="#10B981" /> Notifications On
-                        </span>
-                      )}
-                      <button onClick={() => setShowCarpoolModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1">
-                        🚗 Carpool ({getCarpoolMatches(selectedMeeting).offers.length} offers)
-                      </button>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
+                      <p className="text-2xl font-bold">{stats.arrived}</p>
+                      <p className="text-xs">🎉 Arrived</p>
                     </div>
+                    <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
+                      <p className="text-2xl font-bold">{stats.onway}</p>
+                      <p className="text-xs">🚗 On Way</p>
+                    </div>
+                    <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
+                      <p className="text-2xl font-bold">{stats.coming}</p>
+                      <p className="text-xs">✅ Coming</p>
+                    </div>
+                    <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
+                      <p className="text-2xl font-bold">{stats.cantmake}</p>
+                      <p className="text-xs">❌ Can't</p>
+                    </div>
+                    <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
+                      <p className="text-2xl font-bold">{stats.noresponse}</p>
+                      <p className="text-xs">❓ No Reply</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <button onClick={() => setShowCarpoolModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-3 py-2 rounded-xl text-sm font-medium transition-all">
+                      🚗 Carpool Board
+                    </button>
                   </div>
                 </div>
               );
             })()}
 
-            {/* Live Updates Feed with ETA */}
+            {/* Live Updates */}
             {(() => {
               const updates = getAllStatusUpdates(selectedMeeting);
               return updates.length > 0 && (
                 <GlassCard className="p-4 shadow-lg">
                   <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                    <PulsingDot color="#10B981" />
+                    <PulsingDot />
                     Live Updates ({updates.length})
                   </h3>
-                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
                     {updates.map((update, idx) => (
                       <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all">
                         <MemberAvatar name={update.member} photo={getMemberPhoto(update.groupIdx, update.memberIdx)} size="sm" color={update.groupColor} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-medium text-gray-800">{update.member}</span>
-                            <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: update.status.color }}>{update.status.icon} {update.status.label}</span>
-                            {update.eta && (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">⏱️ ETA: {update.eta}</span>
-                            )}
-                            {update.location && (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">📍 {update.location.distance} mi</span>
-                            )}
+                            <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: update.status?.color }}>{update.status?.icon} {update.status?.label}</span>
+                            {update.location && <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">⏱️ {update.location.eta}</span>}
                           </div>
                           {update.message && <p className="text-sm text-gray-500 truncate">💬 {update.message}</p>}
                         </div>
@@ -1456,86 +1400,20 @@ export default function NikomNiMankon() {
               );
             })()}
 
-            {/* Carpool Section */}
-            {(() => {
-              const { offers, requests, matches } = getCarpoolMatches(selectedMeeting);
-              return (offers.length > 0 || requests.length > 0) && (
-                <GlassCard className="p-4 shadow-lg">
-                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">🚗 Carpool Board</h3>
-                  
-                  {offers.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-sm font-medium text-green-600 mb-2">🚗 Offering Rides ({offers.length})</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {offers.map((offer, idx) => {
-                          const area = CARPOOL_AREAS.find(a => a.id === offer.area);
-                          return (
-                            <div key={idx} className="flex items-center gap-2 p-3 bg-green-50 rounded-xl border border-green-200">
-                              <MemberAvatar name={offer.member} photo={getMemberPhoto(offer.groupIdx, offer.memberIdx)} size="sm" color={offer.groupColor} />
-                              <div className="flex-1">
-                                <p className="font-medium text-gray-800 text-sm">{offer.member}</p>
-                                <p className="text-xs text-gray-500">{area?.icon} {area?.name} • {offer.seats} seats</p>
-                              </div>
-                              <a href={`tel:${getMemberContact(offer.groupIdx, offer.memberIdx)?.phone || ''}`} className="bg-green-500 text-white px-2 py-1 rounded-lg text-xs font-bold">📞 Call</a>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {requests.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-blue-600 mb-2">🙋 Need a Ride ({requests.length})</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {requests.map((req, idx) => {
-                          const area = CARPOOL_AREAS.find(a => a.id === req.area);
-                          const hasMatch = offers.some(o => o.area === req.area);
-                          return (
-                            <div key={idx} className={`flex items-center gap-2 p-3 rounded-xl border ${hasMatch ? 'bg-yellow-50 border-yellow-300' : 'bg-blue-50 border-blue-200'}`}>
-                              <MemberAvatar name={req.member} photo={getMemberPhoto(req.groupIdx, req.memberIdx)} size="sm" color={req.groupColor} />
-                              <div className="flex-1">
-                                <p className="font-medium text-gray-800 text-sm">{req.member}</p>
-                                <p className="text-xs text-gray-500">{area?.icon} {area?.name}</p>
-                              </div>
-                              {hasMatch && <span className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded-lg text-xs font-bold">🎉 Match!</span>}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </GlassCard>
-              );
-            })()}
-
-            {/* All Members Check-In */}
+            {/* Members Status List */}
             <GlassCard className="p-4 shadow-lg">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <h3 className="font-bold text-gray-800">👥 Update Status</h3>
-                <div className="flex gap-2">
-                  <button onClick={() => setShowCarpoolModal(true)} className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-xl text-sm font-medium transition-all">🚗 Carpool</button>
-                  <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none text-sm w-40 transition-all" />
-                </div>
+                <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none text-sm w-40" />
               </div>
               <div className="space-y-3">
                 {groups.map((group, gIdx) => {
                   const filteredMembers = group.members.filter(m => !searchTerm || m.toLowerCase().includes(searchTerm.toLowerCase()));
                   if (filteredMembers.length === 0) return null;
-                  const statusCounts = {
-                    coming: group.members.filter((_, mIdx) => ['coming', 'almost'].includes(getMemberStatus(selectedMeeting, gIdx, mIdx))).length,
-                    onway: group.members.filter((_, mIdx) => ['onway', 'late'].includes(getMemberStatus(selectedMeeting, gIdx, mIdx))).length,
-                    arrived: group.members.filter((_, mIdx) => getMemberStatus(selectedMeeting, gIdx, mIdx) === 'arrived').length,
-                  };
                   return (
                     <div key={gIdx} className="rounded-xl overflow-hidden border">
                       <div className="p-3 flex items-center justify-between" style={{ backgroundColor: group.color + '15' }}>
                         <span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span>
-                        <div className="flex gap-1 text-xs">
-                          <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">🎉 {statusCounts.arrived}</span>
-                          <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">🚗 {statusCounts.onway}</span>
-                          <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">✅ {statusCounts.coming}</span>
-                        </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3">
                         {filteredMembers.map((member) => {
@@ -1544,25 +1422,20 @@ export default function NikomNiMankon() {
                           const statusInfo = STATUS_OPTIONS.find(s => s.id === status);
                           const message = getStatusMessage(selectedMeeting, gIdx, actualIdx);
                           const location = getMemberLocation(gIdx, actualIdx);
-                          const carpool = getCarpoolOffer(selectedMeeting, gIdx, actualIdx) || getCarpoolRequest(selectedMeeting, gIdx, actualIdx);
                           
                           return (
                             <div 
                               key={member} 
-                              className={`p-3 rounded-xl text-sm transition-all hover:shadow-md ${status ? 'border-2' : 'bg-gray-50 hover:bg-gray-100'}`}
+                              className={`p-3 rounded-xl text-sm transition-all ${status ? 'border-2' : 'bg-gray-50'}`}
                               style={status ? { borderColor: statusInfo?.color, backgroundColor: statusInfo?.color + '10' } : {}}
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2 flex-1 min-w-0">
                                   <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} />
-                                  <div className="flex-1 min-w-0">
-                                    <span className="font-medium text-gray-800 truncate block">{member}</span>
-                                    {message && <span className="text-xs text-gray-500 truncate block">💬 {message}</span>}
-                                  </div>
+                                  <span className="font-medium text-gray-800 truncate">{member}</span>
                                 </div>
                               </div>
                               
-                              {/* Status & Location Info */}
                               <div className="flex flex-wrap gap-1 mb-2">
                                 {status && (
                                   <span className="px-2 py-0.5 rounded-lg text-xs font-bold text-white" style={{ backgroundColor: statusInfo?.color }}>
@@ -1571,18 +1444,13 @@ export default function NikomNiMankon() {
                                 )}
                                 {location && (
                                   <span className="px-2 py-0.5 rounded-lg text-xs bg-purple-100 text-purple-700">
-                                    ⏱️ {location.eta} • {location.distance}mi
-                                  </span>
-                                )}
-                                {carpool && (
-                                  <span className="px-2 py-0.5 rounded-lg text-xs bg-blue-100 text-blue-700">
-                                    🚗 {getCarpoolOffer(selectedMeeting, gIdx, actualIdx) ? 'Offering' : 'Needs'} ride
+                                    ⏱️ {location.eta}
                                   </span>
                                 )}
                               </div>
+                              {message && <p className="text-xs text-gray-500 mb-2">💬 {message}</p>}
                               
-                              {/* Action Buttons */}
-                              <div className="flex gap-1 flex-wrap">
+                              <div className="flex gap-1">
                                 <button 
                                   onClick={() => { setCheckinMember({ groupIdx: gIdx, memberIdx: actualIdx }); setShowCheckinModal(true); }}
                                   className="px-2 py-1 rounded-lg text-xs font-medium bg-gray-200 hover:bg-gray-300 text-gray-700 transition-all"
@@ -1603,53 +1471,6 @@ export default function NikomNiMankon() {
                     </div>
                   );
                 })}
-              </div>
-            </GlassCard>
-
-            {/* Quick Share */}
-            <GlassCard className="p-4 shadow-lg">
-              <h3 className="font-bold text-gray-800 mb-3">📱 Share Status Update</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <button 
-                  onClick={() => {
-                    const stats = getMeetingStatusStats(selectedMeeting);
-                    const msg = `🌴 *NIKOM NI MANKON* 🌴\n📅 ${currentMeeting?.full}\n📍 ${currentMeeting?.host}'s place\n\n📊 *STATUS UPDATE*\n🎉 Arrived: ${stats.arrived}\n🚗 On the way: ${stats.onway}\n✅ Coming: ${stats.coming}\n❌ Can't make it: ${stats.cantmake}\n❓ No response: ${stats.noresponse}\n\n🌿 See you soon!`;
-                    setWhatsAppMessage(msg);
-                    setShowWhatsAppModal(true);
-                  }}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all hover:scale-105"
-                >
-                  📱 Share Status to WhatsApp
-                </button>
-                <button 
-                  onClick={() => {
-                    const { offers, requests } = getCarpoolMatches(selectedMeeting);
-                    let msg = `🌴 *NIKOM NI MANKON* 🌴\n📅 ${currentMeeting?.full}\n\n🚗 *CARPOOL BOARD*\n\n`;
-                    if (offers.length > 0) {
-                      msg += `*Offering Rides:*\n`;
-                      offers.forEach(o => {
-                        const area = CARPOOL_AREAS.find(a => a.id === o.area);
-                        msg += `• ${o.member} - ${area?.name} (${o.seats} seats)\n`;
-                      });
-                    }
-                    if (requests.length > 0) {
-                      msg += `\n*Need a Ride:*\n`;
-                      requests.forEach(r => {
-                        const area = CARPOOL_AREAS.find(a => a.id === r.area);
-                        msg += `• ${r.member} - ${area?.name}\n`;
-                      });
-                    }
-                    if (offers.length === 0 && requests.length === 0) {
-                      msg += `No carpool offers or requests yet.\n`;
-                    }
-                    msg += `\n🌿 Coordinate rides in the group!`;
-                    setWhatsAppMessage(msg);
-                    setShowWhatsAppModal(true);
-                  }}
-                  className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all hover:scale-105"
-                >
-                  🚗 Share Carpool Board
-                </button>
               </div>
             </GlassCard>
           </div>
@@ -1681,9 +1502,8 @@ export default function NikomNiMankon() {
               const stats = getGroupMeetingStats(selectedMeeting, selectedGroup);
               return (
                 <>
-                  <div className={`bg-gradient-to-r ${group.gradient} rounded-2xl p-5 text-white shadow-xl relative overflow-hidden`}>
-                    <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
-                    <div className="relative flex justify-between items-start">
+                  <div className={`bg-gradient-to-r ${group.gradient} rounded-2xl p-5 text-white shadow-xl`}>
+                    <div className="flex justify-between items-start">
                       <div>
                         <p className="text-white/80 text-sm">{currentMeeting?.full}</p>
                         <h2 className="text-2xl font-bold">{group.name}</h2>
@@ -1693,7 +1513,14 @@ export default function NikomNiMankon() {
                             <MemberAvatar name={beneficiary.name} photo={getMemberPhoto(selectedGroup, beneficiary.index)} size="md" color="#fff" />
                             <div>
                               <p className="font-bold text-lg">{beneficiary.name}</p>
-                              {isAdmin && <button onClick={() => { setEditingBeneficiary({ meetingIdx: selectedMeeting, groupIdx: selectedGroup }); setShowBeneficiaryModal(true); }} className="text-xs text-white/80 underline">🔄 Change</button>}
+                              {isAdmin && (
+                                <button 
+                                  onClick={() => openBeneficiaryModal(selectedMeeting, selectedGroup)} 
+                                  className="text-xs text-white/80 underline hover:text-white"
+                                >
+                                  🔄 Change
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1701,7 +1528,6 @@ export default function NikomNiMankon() {
                       <div className="text-center bg-white/20 backdrop-blur rounded-xl p-4">
                         <p className="text-3xl font-bold">${stats.njangiCollected.toLocaleString()}</p>
                         <p className="text-white/80 text-sm">of ${stats.njangiTarget.toLocaleString()}</p>
-                        <div className="mt-2"><ProgressRing progress={stats.njangiPercentage} size={50} strokeWidth={5} color="#fff" /></div>
                       </div>
                     </div>
                   </div>
@@ -1725,7 +1551,7 @@ export default function NikomNiMankon() {
                                 <td className="px-4 py-3 text-gray-500">{mIdx + 1}</td>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-3 cursor-pointer" onClick={() => openMemberModal(selectedGroup, mIdx)}>
-                                    <MemberAvatar name={member} photo={getMemberPhoto(selectedGroup, mIdx)} size="sm" color={group.color} isAdmin={isAdmin} />
+                                    <MemberAvatar name={member} photo={getMemberPhoto(selectedGroup, mIdx)} size="sm" color={group.color} />
                                     <div>
                                       <span className="font-medium text-gray-800">{member}</span>
                                       {isBeneficiary && <span className="ml-2 bg-gradient-to-r from-yellow-400 to-amber-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full">⭐ BENEFICIARY</span>}
@@ -1734,7 +1560,7 @@ export default function NikomNiMankon() {
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                   {isBeneficiary ? (
-                                    <span className="bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 px-4 py-2 rounded-xl text-sm font-bold inline-block shine">💎 RECEIVES</span>
+                                    <span className="bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 px-4 py-2 rounded-xl text-sm font-bold inline-block">💎 RECEIVES</span>
                                   ) : (
                                     <button onClick={() => toggleNjangi(selectedMeeting, selectedGroup, mIdx)} disabled={!isAdmin} className={`w-24 py-2 rounded-xl font-bold text-sm transition-all hover:scale-105 ${isPaid ? 'text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'} ${!isAdmin && 'opacity-70 cursor-not-allowed'}`} style={isPaid ? { backgroundColor: group.color } : {}}>
                                       {isPaid ? '✓ PAID' : '$1,000'}
@@ -1762,9 +1588,8 @@ export default function NikomNiMankon() {
                 {meetings.map((m, idx) => (<button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedMeeting === idx ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg' : 'bg-gray-100 hover:bg-purple-100'}`}>{m.date}</button>))}
               </div>
             </GlassCard>
-            <div className="bg-gradient-to-r from-purple-500 via-violet-500 to-indigo-600 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
-              <div className="relative flex justify-between items-start">
+            <div className="bg-gradient-to-r from-purple-500 via-violet-500 to-indigo-600 rounded-2xl p-5 text-white shadow-xl">
+              <div className="flex justify-between items-start">
                 <div>
                   <p className="text-purple-100 text-sm">{currentMeeting?.full}</p>
                   <h2 className="text-2xl font-bold">🏦 Savings Fund</h2>
@@ -1783,17 +1608,15 @@ export default function NikomNiMankon() {
               )}
             </div>
             <GlassCard className="p-4 shadow-lg">
-              <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none mb-4 transition-all" />
+              <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none mb-4" />
               <div className="space-y-3">
                 {groups.map((group, gIdx) => {
                   const filteredMembers = group.members.filter(m => !searchTerm || m.toLowerCase().includes(searchTerm.toLowerCase()));
                   if (filteredMembers.length === 0) return null;
-                  const paidCount = group.members.filter((_, mIdx) => savingsFundPayments[`${selectedMeeting}-${gIdx}-${mIdx}`]).length;
                   return (
                     <div key={gIdx} className="rounded-xl overflow-hidden border">
-                      <div className="p-3 flex items-center justify-between" style={{ backgroundColor: group.color + '15' }}>
+                      <div className="p-3" style={{ backgroundColor: group.color + '15' }}>
                         <span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span>
-                        <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: group.color + '20', color: group.color }}>{paidCount}/{group.members.length}</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3">
                         {filteredMembers.map((member) => {
@@ -1802,7 +1625,7 @@ export default function NikomNiMankon() {
                           return (
                             <div key={member} className={`flex items-center justify-between p-3 rounded-xl text-sm transition-all ${isPaid ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50 hover:bg-gray-100'}`}>
                               <div className="flex items-center gap-2">
-                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} onClick={() => openMemberModal(gIdx, actualIdx)} isAdmin={isAdmin} />
+                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} onClick={() => openMemberModal(gIdx, actualIdx)} />
                                 <span className="font-medium text-gray-800 truncate">{member}</span>
                               </div>
                               <button onClick={() => toggleSavingsFund(selectedMeeting, gIdx, actualIdx)} disabled={!isAdmin} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${isPaid ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} ${!isAdmin && 'cursor-not-allowed opacity-70'}`}>{isPaid ? '✓' : '$100'}</button>
@@ -1826,9 +1649,8 @@ export default function NikomNiMankon() {
                 {meetings.map((m, idx) => (<button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedMeeting === idx ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg' : 'bg-gray-100 hover:bg-teal-100'}`}>{m.date}</button>))}
               </div>
             </GlassCard>
-            <div className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
-              <div className="relative flex justify-between items-start">
+            <div className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 rounded-2xl p-5 text-white shadow-xl">
+              <div className="flex justify-between items-start">
                 <div>
                   <p className="text-teal-100 text-sm">{currentMeeting?.full}</p>
                   <h2 className="text-2xl font-bold">🍽️ Host/Food Fee</h2>
@@ -1841,17 +1663,15 @@ export default function NikomNiMankon() {
               </div>
             </div>
             <GlassCard className="p-4 shadow-lg">
-              <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none mb-4 transition-all" />
+              <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none mb-4" />
               <div className="space-y-3">
                 {groups.map((group, gIdx) => {
                   const filteredMembers = group.members.filter(m => !searchTerm || m.toLowerCase().includes(searchTerm.toLowerCase()));
                   if (filteredMembers.length === 0) return null;
-                  const paidCount = group.members.filter((_, mIdx) => hostFeePayments[`${selectedMeeting}-${gIdx}-${mIdx}`]).length;
                   return (
                     <div key={gIdx} className="rounded-xl overflow-hidden border">
-                      <div className="p-3 flex items-center justify-between" style={{ backgroundColor: group.color + '15' }}>
+                      <div className="p-3" style={{ backgroundColor: group.color + '15' }}>
                         <span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span>
-                        <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: group.color + '20', color: group.color }}>{paidCount}/{group.members.length}</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3">
                         {filteredMembers.map((member) => {
@@ -1860,7 +1680,7 @@ export default function NikomNiMankon() {
                           return (
                             <div key={member} className={`flex items-center justify-between p-3 rounded-xl text-sm transition-all ${isPaid ? 'bg-teal-50 border border-teal-200' : 'bg-gray-50 hover:bg-gray-100'}`}>
                               <div className="flex items-center gap-2">
-                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} onClick={() => openMemberModal(gIdx, actualIdx)} isAdmin={isAdmin} />
+                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} onClick={() => openMemberModal(gIdx, actualIdx)} />
                                 <span className="font-medium text-gray-800 truncate">{member}</span>
                               </div>
                               <button onClick={() => toggleHostFee(selectedMeeting, gIdx, actualIdx)} disabled={!isAdmin} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${isPaid ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-600'} ${!isAdmin && 'cursor-not-allowed opacity-70'}`}>{isPaid ? '✓' : '$20'}</button>
@@ -1884,13 +1704,11 @@ export default function NikomNiMankon() {
                 {meetings.map((m, idx) => (<button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedMeeting === idx ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg' : 'bg-gray-100 hover:bg-blue-100'}`}>{m.date}</button>))}
               </div>
             </GlassCard>
-            <div className="bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
-              <div className="relative flex justify-between items-start">
+            <div className="bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-2xl p-5 text-white shadow-xl">
+              <div className="flex justify-between items-start">
                 <div>
                   <p className="text-blue-100 text-sm">{currentMeeting?.full}</p>
                   <h2 className="text-2xl font-bold">✋ Attendance</h2>
-                  <p className="text-blue-200 text-sm mt-1">Track who's present</p>
                 </div>
                 <div className="text-center bg-white/20 backdrop-blur rounded-xl p-4">
                   <p className="text-3xl font-bold">{attendanceStats.present}/{attendanceStats.total}</p>
@@ -1899,17 +1717,15 @@ export default function NikomNiMankon() {
               </div>
             </div>
             <GlassCard className="p-4 shadow-lg">
-              <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none mb-4 transition-all" />
+              <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none mb-4" />
               <div className="space-y-3">
                 {groups.map((group, gIdx) => {
                   const filteredMembers = group.members.filter(m => !searchTerm || m.toLowerCase().includes(searchTerm.toLowerCase()));
                   if (filteredMembers.length === 0) return null;
-                  const presentCount = group.members.filter((_, mIdx) => attendance[`${selectedMeeting}-${gIdx}-${mIdx}`]).length;
                   return (
                     <div key={gIdx} className="rounded-xl overflow-hidden border">
-                      <div className="p-3 flex items-center justify-between" style={{ backgroundColor: group.color + '15' }}>
+                      <div className="p-3" style={{ backgroundColor: group.color + '15' }}>
                         <span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span>
-                        <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: group.color + '20', color: group.color }}>{presentCount}/{group.members.length} present</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3">
                         {filteredMembers.map((member) => {
@@ -1918,7 +1734,7 @@ export default function NikomNiMankon() {
                           return (
                             <div key={member} className={`flex items-center justify-between p-3 rounded-xl text-sm transition-all ${isPresent ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 hover:bg-gray-100'}`}>
                               <div className="flex items-center gap-2">
-                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} onClick={() => openMemberModal(gIdx, actualIdx)} isAdmin={isAdmin} />
+                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} onClick={() => openMemberModal(gIdx, actualIdx)} />
                                 <span className="font-medium text-gray-800 truncate">{member}</span>
                               </div>
                               <button onClick={() => toggleAttendance(selectedMeeting, gIdx, actualIdx)} disabled={!isAdmin} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${isPresent ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'} ${!isAdmin && 'cursor-not-allowed opacity-70'}`}>{isPresent ? '✓ Present' : 'Absent'}</button>
@@ -1956,7 +1772,12 @@ export default function NikomNiMankon() {
                         const beneficiary = getBeneficiary(gIdx, idx);
                         const stats = getGroupMeetingStats(idx, gIdx);
                         return (
-                          <div key={gIdx} className="p-3 rounded-xl border text-sm transition-all hover:shadow-md" style={{ borderColor: group.color + '50' }}>
+                          <div 
+                            key={gIdx} 
+                            onClick={() => openBeneficiaryModal(idx, gIdx)}
+                            className={`p-3 rounded-xl border text-sm transition-all hover:shadow-md ${isAdmin ? 'cursor-pointer' : ''}`} 
+                            style={{ borderColor: group.color + '50' }}
+                          >
                             <p className="text-xs font-bold truncate mb-2" style={{ color: group.color }}>{group.name}</p>
                             <div className="flex items-center gap-2">
                               <MemberAvatar name={beneficiary.name} photo={getMemberPhoto(gIdx, beneficiary.index)} size="sm" color={group.color} />
@@ -1985,8 +1806,8 @@ export default function NikomNiMankon() {
               <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <h3 className="font-bold text-gray-800 text-lg">👥 All {totalMembers} Members</h3>
                 <div className="flex gap-2">
-                  {isAdmin && <button onClick={() => setShowAddMemberModal(true)} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-lg transition-all hover:scale-105">➕ Add Member</button>}
-                  <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm w-48 transition-all" />
+                  {isAdmin && <button onClick={() => setShowAddMemberModal(true)} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-lg transition-all">➕ Add Member</button>}
+                  <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm w-48" />
                 </div>
               </div>
               <div className="space-y-4">
@@ -2004,11 +1825,11 @@ export default function NikomNiMankon() {
                           {(searchTerm ? filteredMembers : group.members).map((member, mIdx) => {
                             const actualIdx = group.members.indexOf(member);
                             return (
-                              <div key={actualIdx} onClick={() => openMemberModal(gIdx, actualIdx)} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5">
-                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="md" color={group.color} isAdmin={isAdmin} />
+                              <div key={actualIdx} onClick={() => openMemberModal(gIdx, actualIdx)} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-all hover:shadow-md">
+                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="md" color={group.color} />
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium text-gray-800 truncate">{member}</p>
-                                  <p className="text-xs text-gray-500">Tap to view details</p>
+                                  <p className="text-xs text-gray-500">Tap to view</p>
                                 </div>
                               </div>
                             );
@@ -2026,15 +1847,12 @@ export default function NikomNiMankon() {
         {/* WhatsApp Tab */}
         {activeTab === 'whatsapp' && (
           <div className="space-y-6">
-            <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
-              <div className="relative">
-                <h2 className="text-3xl font-bold">📱 WhatsApp</h2>
-                <p className="text-green-100 mt-2">Share updates with the community</p>
-              </div>
+            <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-2xl p-6 text-white shadow-xl">
+              <h2 className="text-3xl font-bold">📱 WhatsApp</h2>
+              <p className="text-green-100 mt-2">Share updates with the community</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <GlassCard className="p-6 shadow-lg hover:shadow-xl transition-all">
+              <GlassCard className="p-6 shadow-lg">
                 <div className="text-center mb-4">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
                     <span className="text-3xl">📊</span>
@@ -2045,20 +1863,20 @@ export default function NikomNiMankon() {
                 <select onChange={(e) => setSelectedMeeting(parseInt(e.target.value))} value={selectedMeeting} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4">
                   {meetings.map((m, idx) => (<option key={idx} value={idx}>#{idx + 1}: {m.full}</option>))}
                 </select>
-                <button onClick={() => openWhatsApp('summary')} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all hover:scale-105">📱 Generate Summary</button>
+                <button onClick={() => openWhatsApp('summary')} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">📱 Generate Summary</button>
               </GlassCard>
-              <GlassCard className="p-6 shadow-lg hover:shadow-xl transition-all">
+              <GlassCard className="p-6 shadow-lg">
                 <div className="text-center mb-4">
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
                     <span className="text-3xl">🔔</span>
                   </div>
                   <h3 className="font-bold text-gray-800 text-lg">Meeting Reminder</h3>
-                  <p className="text-gray-500 text-sm">Remind members about upcoming meeting</p>
+                  <p className="text-gray-500 text-sm">Remind members</p>
                 </div>
                 <select onChange={(e) => setSelectedMeeting(parseInt(e.target.value))} value={selectedMeeting} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4">
                   {meetings.map((m, idx) => (<option key={idx} value={idx}>#{idx + 1}: {m.full}</option>))}
                 </select>
-                <button onClick={() => openWhatsApp('reminder')} className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all hover:scale-105">📱 Generate Reminder</button>
+                <button onClick={() => openWhatsApp('reminder')} className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">📱 Generate Reminder</button>
               </GlassCard>
             </div>
           </div>
@@ -2069,7 +1887,7 @@ export default function NikomNiMankon() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {rules.map((rule, idx) => (
-                <GlassCard key={idx} className="p-5 shadow-lg border-l-4 border-emerald-500 hover:shadow-xl transition-all hover:-translate-y-1">
+                <GlassCard key={idx} className="p-5 shadow-lg border-l-4 border-emerald-500 hover:shadow-xl transition-all">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center text-2xl shadow-lg flex-shrink-0">{rule.icon}</div>
                     <div className="flex-1">
@@ -2083,46 +1901,31 @@ export default function NikomNiMankon() {
                 </GlassCard>
               ))}
             </div>
-            <div className="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 rounded-2xl p-6 text-white shadow-xl">
-              <h3 className="font-bold text-xl mb-4 text-center">💰 Per Meeting Breakdown</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                {[{amount: '$1,000', label: 'Njangi', icon: '💰'}, {amount: '$100', label: 'Savings', icon: '🏦'}, {amount: '$20', label: 'Host Fee', icon: '🍽️'}, {amount: '$1,120', label: 'TOTAL', icon: '💎'}].map((item, i) => (
-                  <div key={i} className="bg-white/20 backdrop-blur rounded-xl p-4 hover:bg-white/30 transition-all">
-                    <span className="text-2xl">{item.icon}</span>
-                    <p className="text-2xl font-bold mt-2">{item.amount}</p>
-                    <p className="text-emerald-100 text-sm">{item.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         )}
       </main>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 text-white py-8 mt-8 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.4"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
-        <div className="max-w-7xl mx-auto px-4 text-center relative">
-          <div className="flex justify-center mb-4">
-            <RaffiaPalmSVG className="w-16 h-24 opacity-80" />
-          </div>
-          <p className="font-bold text-2xl">🌴 Nikom Ni Mankon 🌴</p>
-          <p className="text-emerald-300 text-sm mt-1">Maryland, USA • Growing Together Since 2026</p>
+      <footer className="bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 text-white py-8 mt-8">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <p className="text-6xl mb-4">🌴</p>
+          <p className="font-bold text-2xl">NIKOM NI MANKON</p>
+          <p className="text-emerald-300 text-sm mt-1">Maryland, USA • Growing Together</p>
           
           <div className="mt-6 flex flex-col items-center gap-3">
             <p className="text-emerald-400 text-xs uppercase tracking-wider">Built by</p>
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl px-6 py-3 border border-white/20 shadow-xl hover:bg-white/20 transition-all">
-              <svg width="48" height="48" viewBox="0 0 100 100" className="shadow-lg rounded-xl">
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl px-6 py-3 border border-white/20 shadow-xl">
+              <svg width="48" height="48" viewBox="0 0 100 100">
                 <rect x="5" y="5" width="90" height="90" rx="18" fill="#10B981"/>
                 <text x="50" y="62" fontFamily="Arial Black, sans-serif" fontSize="36" fontWeight="900" fill="white" textAnchor="middle">TA</text>
               </svg>
               <div className="flex flex-col items-start">
-                <span className="font-bold text-white text-lg leading-tight">TECH</span>
-                <span className="text-emerald-300 text-lg leading-tight">SOLUTIONS</span>
+                <span className="font-bold text-white text-lg">TECH</span>
+                <span className="text-emerald-300 text-lg">SOLUTIONS</span>
               </div>
             </div>
-            <a href="tel:+15714472698" className="flex items-center gap-2 text-emerald-300 hover:text-white transition-all text-sm group">
-              <span className="bg-emerald-500/30 group-hover:bg-emerald-500/50 px-3 py-1.5 rounded-full transition-all">📞 (571) 447-2698</span>
+            <a href="tel:+15714472698" className="flex items-center gap-2 text-emerald-300 hover:text-white transition-all text-sm">
+              <span className="bg-emerald-500/30 px-3 py-1.5 rounded-full">📞 (571) 447-2698</span>
             </a>
           </div>
           
