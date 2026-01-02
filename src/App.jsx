@@ -41,10 +41,11 @@ const rules = [
   { title: 'Unity', text: 'Rally to support each other succeed.', icon: '🤝' },
   { title: 'Culture', text: 'Learn and uphold our Mankon culture.', icon: '🏛️' },
   { title: 'Group Njangi', text: 'ALL members pay $1,000 (including beneficiary to receive full amount).', icon: '💰', amount: '$1,000' },
-  { title: 'Savings Fund', text: 'EVERYONE contributes $100 to savings.', icon: '🏦', amount: '$100' },
+  { title: 'Mutual Fund', text: 'EVERYONE contributes $100 to mutual fund (available for member loans).', icon: '🏦', amount: '$100' },
   { title: 'Host Fee', text: 'EVERYONE gives $20 to the host.', icon: '🍽️', amount: '$20' },
   { title: 'Meeting Time', text: '3pm to 6pm prompt.', icon: '⏰' },
   { title: 'Late Payment', text: 'Fine for late payment.', icon: '⚠️', amount: '$250' },
+  { title: 'Borrowing', text: 'Members can borrow from Mutual Fund with collateral OR a guarantor who hasn\'t yet received Njangi.', icon: '🤝' },
 ];
 
 const LOCAL_KEY = 'nikom_premium_v4';
@@ -167,6 +168,39 @@ const PulsingDot = ({ color = '#10B981' }) => (
   </span>
 );
 
+const ToastNotification = ({ toast, onUndo, onClose }) => {
+  if (!toast.show) return null;
+  
+  return (
+    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md ${
+        toast.type === 'success' ? 'bg-emerald-500/95 text-white' : 
+        toast.type === 'error' ? 'bg-red-500/95 text-white' : 
+        'bg-gray-800/95 text-white'
+      }`}>
+        <span className="text-lg">
+          {toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}
+        </span>
+        <span className="font-medium text-sm">{toast.message}</span>
+        {toast.undoAction && (
+          <button 
+            onClick={onUndo} 
+            className="ml-2 bg-white/20 hover:bg-white/30 px-3 py-1 rounded-lg text-xs font-bold transition-all"
+          >
+            ↩️ Undo
+          </button>
+        )}
+        <button 
+          onClick={onClose} 
+          className="ml-1 hover:bg-white/20 p-1 rounded-lg transition-all"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // =====================================================
 // MAIN APP COMPONENT
 // =====================================================
@@ -240,8 +274,30 @@ export default function NikomNiMankon() {
   const [savingsPaymentNote, setSavingsPaymentNote] = useState('');
   const [showSavingsReportModal, setShowSavingsReportModal] = useState(false);
 
+  // Loan/Borrowing System
+  const [loans, setLoans] = useState([]);
+  const [showLoanModal, setShowLoanModal] = useState(false);
+  const [showNewLoanModal, setShowNewLoanModal] = useState(false);
+  const [newLoan, setNewLoan] = useState({
+    borrowerGroup: 0,
+    borrowerIdx: 0,
+    amount: 500,
+    collateralType: 'item', // 'item' or 'guarantor'
+    collateralDescription: '',
+    guarantorGroup: 0,
+    guarantorIdx: 0,
+    purpose: '',
+    dueDate: ''
+  });
+
+  // Toast Notification System
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success', undoAction: null });
+  const toastTimeoutRef = useRef(null);
+
   // Settings
   const [visibility, setVisibility] = useState({ njangi: false, savings: false, hostFee: false });
+  const [editMode, setEditMode] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState({ njangi: {}, savings: {}, hostFee: {}, attendance: {} });
 
   // UI State
   const [showConfetti, setShowConfetti] = useState(false);
@@ -311,6 +367,7 @@ export default function NikomNiMankon() {
         if (data.hostingLocations) setHostingLocations(data.hostingLocations);
         if (data.paymentMethods) setPaymentMethods(data.paymentMethods);
         if (data.savingsLedger) setSavingsLedger(data.savingsLedger);
+        if (data.loans) setLoans(data.loans);
         if (data.beneficiaryOverrides) setBeneficiaryOverrides(data.beneficiaryOverrides);
         if (data.meetingNotes) setMeetingNotes(data.meetingNotes);
         if (data.groups) setGroups(data.groups);
@@ -327,11 +384,11 @@ export default function NikomNiMankon() {
         adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, 
         attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, 
         memberLocations, carpoolOffers, carpoolRequests, hostingLocations, paymentMethods,
-        beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility, savingsLedger
+        beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility, savingsLedger, loans
       };
       localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
     }
-  }, [adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, memberLocations, carpoolOffers, carpoolRequests, hostingLocations, paymentMethods, beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility, savingsLedger, isLoading]);
+  }, [adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, memberLocations, carpoolOffers, carpoolRequests, hostingLocations, paymentMethods, beneficiaryOverrides, meetingNotes, groups, isAdmin, visibility, savingsLedger, loans, isLoading]);
 
   // =====================================================
   // AUTH FUNCTIONS WITH PHONE RECOVERY
@@ -509,29 +566,80 @@ export default function NikomNiMankon() {
   const toggleNjangi = (meetingIdx, groupIdx, memberIdx) => {
     if (!isAdmin) return;
     const key = `${meetingIdx}-${groupIdx}-${memberIdx}`;
+    const wasChecked = njangiPayments[key];
+    const memberName = groups[groupIdx]?.members[memberIdx]?.split(' ')[0] || 'Member';
+    
     setNjangiPayments(prev => ({ ...prev, [key]: !prev[key] }));
-    triggerConfetti();
+    
+    if (!wasChecked) {
+      triggerConfetti();
+      showToast(`💰 ${memberName} - Njangi paid!`, 'success', () => {
+        setNjangiPayments(prev => ({ ...prev, [key]: false }));
+      });
+    } else {
+      showToast(`↩️ ${memberName} - Njangi unmarked`, 'info', () => {
+        setNjangiPayments(prev => ({ ...prev, [key]: true }));
+      });
+    }
   };
 
   const toggleHostFee = (meetingIdx, groupIdx, memberIdx) => {
     if (!isAdmin) return;
     const key = `${meetingIdx}-${groupIdx}-${memberIdx}`;
+    const wasChecked = hostFeePayments[key];
+    const memberName = groups[groupIdx]?.members[memberIdx]?.split(' ')[0] || 'Member';
+    
     setHostFeePayments(prev => ({ ...prev, [key]: !prev[key] }));
-    triggerConfetti();
+    
+    if (!wasChecked) {
+      triggerConfetti();
+      showToast(`🍽️ ${memberName} - Host fee paid!`, 'success', () => {
+        setHostFeePayments(prev => ({ ...prev, [key]: false }));
+      });
+    } else {
+      showToast(`↩️ ${memberName} - Host fee unmarked`, 'info', () => {
+        setHostFeePayments(prev => ({ ...prev, [key]: true }));
+      });
+    }
   };
 
   const toggleSavingsFund = (meetingIdx, groupIdx, memberIdx) => {
     if (!isAdmin) return;
     const key = `${meetingIdx}-${groupIdx}-${memberIdx}`;
+    const wasChecked = savingsFundPayments[key];
+    const memberName = groups[groupIdx]?.members[memberIdx]?.split(' ')[0] || 'Member';
+    
     setSavingsFundPayments(prev => ({ ...prev, [key]: !prev[key] }));
-    triggerConfetti();
+    
+    if (!wasChecked) {
+      triggerConfetti();
+      showToast(`🏦 ${memberName} - Mutual Fund paid!`, 'success', () => {
+        setSavingsFundPayments(prev => ({ ...prev, [key]: false }));
+      });
+    } else {
+      showToast(`↩️ ${memberName} - Mutual Fund unmarked`, 'info', () => {
+        setSavingsFundPayments(prev => ({ ...prev, [key]: true }));
+      });
+    }
   };
 
   const toggleAttendance = (meetingIdx, groupIdx, memberIdx) => {
     if (!isAdmin) return;
     const key = `${meetingIdx}-${groupIdx}-${memberIdx}`;
+    const wasChecked = attendance[key];
+    const memberName = groups[groupIdx]?.members[memberIdx]?.split(' ')[0] || 'Member';
+    
     setAttendance(prev => ({ ...prev, [key]: !prev[key] }));
-    triggerConfetti();
+    
+    if (!wasChecked) {
+      showToast(`✋ ${memberName} - Marked present`, 'success', () => {
+        setAttendance(prev => ({ ...prev, [key]: false }));
+      });
+    } else {
+      showToast(`↩️ ${memberName} - Attendance unmarked`, 'info', () => {
+        setAttendance(prev => ({ ...prev, [key]: true }));
+      });
+    }
   };
 
   // =====================================================
@@ -690,9 +798,9 @@ export default function NikomNiMankon() {
       adminPassword, recoveryPhone, njangiPayments, hostFeePayments, savingsFundPayments, 
       attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, 
       memberLocations, carpoolOffers, carpoolRequests, hostingLocations, paymentMethods,
-      beneficiaryOverrides, meetingNotes, groups, visibility, savingsLedger,
+      beneficiaryOverrides, meetingNotes, groups, visibility, savingsLedger, loans,
       backupDate: new Date().toISOString(),
-      version: 'v4.0'
+      version: 'v4.1'
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -728,6 +836,7 @@ export default function NikomNiMankon() {
         if (data.hostingLocations) setHostingLocations(data.hostingLocations);
         if (data.paymentMethods) setPaymentMethods(data.paymentMethods);
         if (data.savingsLedger) setSavingsLedger(data.savingsLedger);
+        if (data.loans) setLoans(data.loans);
         if (data.beneficiaryOverrides) setBeneficiaryOverrides(data.beneficiaryOverrides);
         if (data.meetingNotes) setMeetingNotes(data.meetingNotes);
         if (data.groups) setGroups(data.groups);
@@ -787,6 +896,156 @@ export default function NikomNiMankon() {
   };
 
   // =====================================================
+  // TOAST NOTIFICATION SYSTEM
+  // =====================================================
+  const showToast = (message, type = 'success', undoAction = null) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToast({ show: true, message, type, undoAction });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success', undoAction: null });
+    }, 5000);
+  };
+
+  const hideToast = () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToast({ show: false, message: '', type: 'success', undoAction: null });
+  };
+
+  const handleUndo = () => {
+    if (toast.undoAction) {
+      toast.undoAction();
+    }
+    hideToast();
+  };
+
+  // =====================================================
+  // LOAN/BORROWING FUNCTIONS
+  // =====================================================
+  
+  // Get members who haven't benefited yet (eligible to be guarantors)
+  const getEligibleGuarantors = () => {
+    const eligible = [];
+    groups.forEach((group, gIdx) => {
+      group.members.forEach((member, mIdx) => {
+        // Check if this member has been a beneficiary in any past meeting
+        let hasReceived = false;
+        for (let meetingIdx = 0; meetingIdx <= selectedMeeting; meetingIdx++) {
+          const ben = getBeneficiary(gIdx, meetingIdx);
+          if (ben.index === mIdx) {
+            hasReceived = true;
+            break;
+          }
+        }
+        if (!hasReceived) {
+          eligible.push({ member, groupIdx: gIdx, memberIdx: mIdx, groupName: group.name });
+        }
+      });
+    });
+    return eligible;
+  };
+
+  // Get total mutual fund balance
+  const getMutualFundBalance = () => {
+    const stats = getOverallSavingsStats();
+    const totalLoaned = loans
+      .filter(l => l.status === 'active')
+      .reduce((sum, l) => sum + l.amount, 0);
+    return {
+      totalCollected: stats.totalCollected,
+      totalLoaned,
+      availableBalance: stats.totalCollected - totalLoaned
+    };
+  };
+
+  // Create new loan
+  const createLoan = () => {
+    const borrower = groups[newLoan.borrowerGroup]?.members[newLoan.borrowerIdx];
+    if (!borrower || newLoan.amount <= 0) {
+      showToast('Please fill in all required fields', 'error');
+      return;
+    }
+
+    const fundBalance = getMutualFundBalance();
+    if (newLoan.amount > fundBalance.availableBalance) {
+      showToast(`Insufficient funds. Available: $${fundBalance.availableBalance}`, 'error');
+      return;
+    }
+
+    if (newLoan.collateralType === 'item' && !newLoan.collateralDescription.trim()) {
+      showToast('Please describe the collateral', 'error');
+      return;
+    }
+
+    const loan = {
+      id: Date.now(),
+      borrowerGroup: newLoan.borrowerGroup,
+      borrowerIdx: newLoan.borrowerIdx,
+      borrowerName: borrower,
+      amount: newLoan.amount,
+      collateralType: newLoan.collateralType,
+      collateralDescription: newLoan.collateralType === 'item' ? newLoan.collateralDescription : '',
+      guarantorGroup: newLoan.collateralType === 'guarantor' ? newLoan.guarantorGroup : null,
+      guarantorIdx: newLoan.collateralType === 'guarantor' ? newLoan.guarantorIdx : null,
+      guarantorName: newLoan.collateralType === 'guarantor' 
+        ? groups[newLoan.guarantorGroup]?.members[newLoan.guarantorIdx] 
+        : null,
+      purpose: newLoan.purpose,
+      dueDate: newLoan.dueDate,
+      dateCreated: new Date().toISOString(),
+      status: 'active', // active, repaid, defaulted
+      repaidDate: null,
+      repaidAmount: 0
+    };
+
+    setLoans(prev => [...prev, loan]);
+    setShowNewLoanModal(false);
+    setNewLoan({
+      borrowerGroup: 0, borrowerIdx: 0, amount: 500, collateralType: 'item',
+      collateralDescription: '', guarantorGroup: 0, guarantorIdx: 0, purpose: '', dueDate: ''
+    });
+    showToast(`✅ Loan of $${loan.amount} approved for ${borrower}`, 'success');
+    triggerConfetti();
+  };
+
+  // Mark loan as repaid
+  const repayLoan = (loanId) => {
+    setLoans(prev => prev.map(loan => 
+      loan.id === loanId 
+        ? { ...loan, status: 'repaid', repaidDate: new Date().toISOString(), repaidAmount: loan.amount }
+        : loan
+    ));
+    showToast('✅ Loan marked as repaid!', 'success');
+    triggerConfetti();
+  };
+
+  // Delete loan (admin only)
+  const deleteLoan = (loanId) => {
+    if (!confirm('Are you sure you want to delete this loan record?')) return;
+    const deletedLoan = loans.find(l => l.id === loanId);
+    setLoans(prev => prev.filter(l => l.id !== loanId));
+    showToast('🗑️ Loan deleted', 'success', () => {
+      setLoans(prev => [...prev, deletedLoan]);
+    });
+  };
+
+  // Get loan statistics
+  const getLoanStats = () => {
+    const activeLoans = loans.filter(l => l.status === 'active');
+    const repaidLoans = loans.filter(l => l.status === 'repaid');
+    return {
+      totalActive: activeLoans.length,
+      totalActiveAmount: activeLoans.reduce((sum, l) => sum + l.amount, 0),
+      totalRepaid: repaidLoans.length,
+      totalRepaidAmount: repaidLoans.reduce((sum, l) => sum + l.amount, 0),
+      allLoans: loans
+    };
+  };
+
+  // =====================================================
   // PRINT REPORT FUNCTION
   // =====================================================
   const printReport = () => {
@@ -831,7 +1090,7 @@ export default function NikomNiMankon() {
           <h3>💎 Collection Summary</h3>
           <table>
             <tr><td>💰 Njangi</td><td><strong>$${totalNjangi.toLocaleString()}</strong></td></tr>
-            <tr><td>🏦 Savings</td><td><strong>$${ledgerStats.totalCollected.toLocaleString()}</strong></td></tr>
+            <tr><td>🏦 Mutual Fund</td><td><strong>$${ledgerStats.totalCollected.toLocaleString()}</strong></td></tr>
             <tr><td>🍽️ Host Fee</td><td><strong>$${hStats.collected.toLocaleString()}</strong></td></tr>
             <tr><td>✋ Attendance</td><td><strong>${aStats.present}/${aStats.total} (${aStats.percentage}%)</strong></td></tr>
           </table>
@@ -850,7 +1109,7 @@ export default function NikomNiMankon() {
           `;
         }).join('')}
         
-        <h2>🏦 Savings Status Summary</h2>
+        <h2>🏦 Mutual Fund Status Summary</h2>
         <p>✨ Ahead: ${ledgerStats.membersAhead} | ✅ Current: ${ledgerStats.membersCurrent} | ⏳ Behind: ${ledgerStats.membersBehind}</p>
         
         <div class="footer">
@@ -1011,24 +1270,37 @@ export default function NikomNiMankon() {
   const generateSavingsReport = () => {
     const stats = getOverallSavingsStats();
     const meetingsHeld = selectedMeeting + 1;
+    const fundBalance = getMutualFundBalance();
+    const loanStats = getLoanStats();
     
     let msg = `🏦 *NIKOM NI MANKON*\n`;
-    msg += `📊 *SAVINGS FUND REPORT*\n`;
+    msg += `📊 *MUTUAL FUND REPORT*\n`;
     msg += `${'━'.repeat(25)}\n\n`;
     
     msg += `📅 Through Meeting #${meetingsHeld}\n`;
     msg += `💵 Expected per member: $${meetingsHeld * 100}\n\n`;
     
-    msg += `💎 *SUMMARY*\n`;
+    msg += `💎 *FUND SUMMARY*\n`;
     msg += `${'─'.repeat(20)}\n`;
     msg += `💰 Total Collected: $${stats.totalCollected.toLocaleString()}\n`;
-    msg += `🎯 Expected: $${stats.expectedTotal.toLocaleString()}\n`;
+    msg += `💳 Out on Loan: $${fundBalance.totalLoaned.toLocaleString()}\n`;
+    msg += `✅ Available: $${fundBalance.availableBalance.toLocaleString()}\n`;
     msg += `📈 Collection Rate: ${stats.collectionRate}%\n\n`;
     
     msg += `👥 *MEMBER STATUS*\n`;
     msg += `✅ Paid Ahead: ${stats.membersAhead} members (+$${stats.totalCredit})\n`;
     msg += `☑️ Current: ${stats.membersCurrent} members\n`;
     msg += `⏳ Behind: ${stats.membersBehind} members (-$${stats.totalOwed})\n\n`;
+    
+    // Active Loans
+    if (loanStats.totalActive > 0) {
+      msg += `💳 *ACTIVE LOANS (${loanStats.totalActive})*\n`;
+      msg += `${'─'.repeat(20)}\n`;
+      loanStats.allLoans.filter(l => l.status === 'active').forEach(l => {
+        msg += `• ${l.borrowerName.split(' ')[0]}: $${l.amount}\n`;
+      });
+      msg += `\n`;
+    }
     
     // Members behind
     if (stats.membersBehind > 0) {
@@ -1292,7 +1564,7 @@ export default function NikomNiMankon() {
       }
       
       if (reportOptions.includeSavings) {
-        msg += `🏦 Savings: $${sStats.collected.toLocaleString()}\n`;
+        msg += `🏦 Mutual Fund: $${sStats.collected.toLocaleString()}\n`;
         grandTotal += sStats.collected;
       }
       
@@ -1418,7 +1690,7 @@ export default function NikomNiMankon() {
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'checkin', label: 'Check-In', icon: '📢' },
     { id: 'njangi', label: 'Njangi', icon: '💰' },
-    { id: 'savings', label: 'Savings', icon: '🏦' },
+    { id: 'savings', label: 'Mutual Fund', icon: '🏦' },
     { id: 'hostfee', label: 'Host Fee', icon: '🍽️' },
     { id: 'attendance', label: 'Attendance', icon: '✋' },
     { id: 'schedule', label: 'Schedule', icon: '📅' },
@@ -1449,12 +1721,16 @@ export default function NikomNiMankon() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50">
       {showConfetti && <Confetti />}
+      <ToastNotification toast={toast} onUndo={handleUndo} onClose={hideToast} />
       <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handlePhotoUpload} />
 
       {/* Login Modal */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-8 w-full max-w-sm" gradient>
+            <div className="flex justify-end mb-2">
+              <button onClick={() => { setShowLoginModal(false); setPasswordInput(''); setLoginError(''); }} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <span className="text-3xl">🔐</span>
@@ -1474,6 +1750,9 @@ export default function NikomNiMankon() {
       {showForgotPasswordModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-8 w-full max-w-sm" gradient>
+            <div className="flex justify-end mb-2">
+              <button onClick={() => { setShowForgotPasswordModal(false); setCodeSent(false); setRecoveryCode(''); }} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <span className="text-3xl">📱</span>
@@ -1515,7 +1794,10 @@ export default function NikomNiMankon() {
       {showChangePasswordModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-md" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">🔑 Change Password</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">🔑 Change Password</h3>
+              <button onClick={() => { setShowChangePasswordModal(false); setPasswordInput(''); setNewPassword(''); setConfirmPassword(''); setLoginError(''); }} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="Current password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
             <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password (min 4 chars)" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
             <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
@@ -1532,6 +1814,9 @@ export default function NikomNiMankon() {
       {showSetupRecoveryModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-md" gradient>
+            <div className="flex justify-end mb-2">
+              <button onClick={() => { setShowSetupRecoveryModal(false); setNewPhoneInput(''); setLoginError(''); }} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <div className="text-center mb-4">
               <span className="text-4xl">📱</span>
               <h3 className="text-xl font-bold text-gray-800 mt-2">Setup Recovery Phone</h3>
@@ -1556,6 +1841,9 @@ export default function NikomNiMankon() {
       {showMemberModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-md" gradient>
+            <div className="flex justify-end mb-2">
+              <button onClick={() => setShowMemberModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <div className="text-center mb-6">
               <div className="relative inline-block">
                 <MemberAvatar 
@@ -1643,7 +1931,10 @@ export default function NikomNiMankon() {
       {showBeneficiaryModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-md max-h-[80vh] flex flex-col" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">🔄 Change Beneficiary</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xl font-bold text-gray-800">🔄 Change Beneficiary</h3>
+              <button onClick={() => setShowBeneficiaryModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <p className="text-gray-500 text-sm mb-2">{groups[editingBeneficiary.groupIdx]?.name}</p>
             <p className="text-gray-400 text-xs mb-4">{meetings[editingBeneficiary.meetingIdx]?.full}</p>
             <div className="flex-1 overflow-y-auto space-y-2 mb-4">
@@ -1675,6 +1966,9 @@ export default function NikomNiMankon() {
       {showCheckinModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-md" gradient>
+            <div className="flex justify-end mb-2">
+              <button onClick={() => setShowCheckinModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <div className="text-center mb-4">
               <MemberAvatar 
                 name={groups[checkinMember.groupIdx]?.members[checkinMember.memberIdx] || ''} 
@@ -1725,7 +2019,10 @@ export default function NikomNiMankon() {
       {showCarpoolModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">🚗 Carpool Coordination</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">🚗 Carpool Coordination</h3>
+              <button onClick={() => setShowCarpoolModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             
             {(() => {
               const { offers, requests } = getCarpoolMatches(selectedMeeting);
@@ -1786,7 +2083,10 @@ export default function NikomNiMankon() {
       {showHostingModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-md" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">📍 Meeting Location</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xl font-bold text-gray-800">📍 Meeting Location</h3>
+              <button onClick={() => setShowHostingModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <p className="text-gray-500 text-sm mb-4">{meetings[editingHosting.meetingIdx]?.full} - {meetings[editingHosting.meetingIdx]?.host}</p>
             
             <div className="space-y-3">
@@ -1869,6 +2169,9 @@ export default function NikomNiMankon() {
       {showPaymentMethodsModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" gradient>
+            <div className="flex justify-end mb-2">
+              <button onClick={() => setShowPaymentMethodsModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <div className="text-center mb-4">
               <MemberAvatar 
                 name={groups[selectedPaymentMember.groupIdx]?.members[selectedPaymentMember.memberIdx] || ''} 
@@ -1914,6 +2217,9 @@ export default function NikomNiMankon() {
       {showSavingsLedgerModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" gradient>
+            <div className="flex justify-end mb-2">
+              <button onClick={() => setShowSavingsLedgerModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <div className="text-center mb-4">
               <MemberAvatar 
                 name={groups[selectedSavingsMember.groupIdx]?.members[selectedSavingsMember.memberIdx] || ''} 
@@ -2039,7 +2345,10 @@ export default function NikomNiMankon() {
       {showSavingsReportModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-2xl max-h-[90vh] flex flex-col" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">🏦 Savings Fund Report</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">🏦 Mutual Fund Report</h3>
+              <button onClick={() => setShowSavingsReportModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             
             {/* Stats Overview */}
             {(() => {
@@ -2098,11 +2407,275 @@ export default function NikomNiMankon() {
         </div>
       )}
 
+      {/* Loan Management Modal */}
+      {showLoanModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" gradient>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">🏦 Mutual Fund Loans</h3>
+              <button onClick={() => setShowLoanModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
+            
+            {/* Fund Balance */}
+            {(() => {
+              const balance = getMutualFundBalance();
+              const stats = getLoanStats();
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="bg-purple-50 p-4 rounded-xl text-center">
+                      <p className="text-2xl font-bold text-purple-600">${balance.totalCollected.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">Total Fund</p>
+                    </div>
+                    <div className="bg-orange-50 p-4 rounded-xl text-center">
+                      <p className="text-2xl font-bold text-orange-600">${balance.totalLoaned.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">Out on Loan</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-xl text-center">
+                      <p className="text-2xl font-bold text-green-600">${balance.availableBalance.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">Available</p>
+                    </div>
+                  </div>
+
+                  {isAdmin && (
+                    <button 
+                      onClick={() => { setShowLoanModal(false); setShowNewLoanModal(true); }}
+                      className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white py-3 rounded-xl font-bold mb-4 transition-all hover:shadow-lg"
+                    >
+                      ➕ New Loan Request
+                    </button>
+                  )}
+
+                  {/* Active Loans */}
+                  <div className="mb-4">
+                    <h4 className="font-bold text-gray-700 mb-2">📋 Active Loans ({stats.totalActive})</h4>
+                    {stats.allLoans.filter(l => l.status === 'active').length === 0 ? (
+                      <p className="text-gray-400 text-sm text-center py-4">No active loans</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {stats.allLoans.filter(l => l.status === 'active').map(loan => (
+                          <div key={loan.id} className="bg-orange-50 border-2 border-orange-200 p-4 rounded-xl">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <MemberAvatar name={loan.borrowerName} size="sm" color="#f97316" />
+                                <div>
+                                  <p className="font-bold text-gray-800">{loan.borrowerName}</p>
+                                  <p className="text-xs text-gray-500">{new Date(loan.dateCreated).toLocaleDateString()}</p>
+                                </div>
+                              </div>
+                              <p className="text-2xl font-bold text-orange-600">${loan.amount}</p>
+                            </div>
+                            <div className="text-sm text-gray-600 mb-2">
+                              {loan.collateralType === 'item' ? (
+                                <p>📦 Collateral: {loan.collateralDescription}</p>
+                              ) : (
+                                <p>🤝 Guarantor: {loan.guarantorName}</p>
+                              )}
+                              {loan.purpose && <p>📝 Purpose: {loan.purpose}</p>}
+                              {loan.dueDate && <p>📅 Due: {new Date(loan.dueDate).toLocaleDateString()}</p>}
+                            </div>
+                            {isAdmin && (
+                              <div className="flex gap-2">
+                                <button onClick={() => repayLoan(loan.id)} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg text-sm font-bold">✅ Mark Repaid</button>
+                                <button onClick={() => deleteLoan(loan.id)} className="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-2 rounded-lg text-sm">🗑️</button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Repaid Loans */}
+                  {stats.totalRepaid > 0 && (
+                    <div>
+                      <h4 className="font-bold text-gray-700 mb-2">✅ Repaid Loans ({stats.totalRepaid})</h4>
+                      <div className="space-y-2">
+                        {stats.allLoans.filter(l => l.status === 'repaid').slice(0, 5).map(loan => (
+                          <div key={loan.id} className="bg-green-50 border border-green-200 p-3 rounded-xl flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-green-500">✅</span>
+                              <span className="text-gray-700">{loan.borrowerName}</span>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-green-600">${loan.amount}</p>
+                              <p className="text-xs text-gray-500">{new Date(loan.repaidDate).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </GlassCard>
+        </div>
+      )}
+
+      {/* New Loan Modal */}
+      {showNewLoanModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" gradient>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">➕ New Loan Request</h3>
+              <button onClick={() => setShowNewLoanModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
+
+            {/* Available Balance */}
+            <div className="bg-green-50 p-3 rounded-xl mb-4 text-center">
+              <p className="text-sm text-gray-600">Available to Lend</p>
+              <p className="text-2xl font-bold text-green-600">${getMutualFundBalance().availableBalance.toLocaleString()}</p>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Borrower Selection */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">👤 Borrower</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <select 
+                    value={newLoan.borrowerGroup} 
+                    onChange={(e) => setNewLoan({...newLoan, borrowerGroup: parseInt(e.target.value), borrowerIdx: 0})}
+                    className="px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-sm"
+                  >
+                    {groups.map((g, i) => <option key={i} value={i}>{g.name}</option>)}
+                  </select>
+                  <select 
+                    value={newLoan.borrowerIdx} 
+                    onChange={(e) => setNewLoan({...newLoan, borrowerIdx: parseInt(e.target.value)})}
+                    className="px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-sm"
+                  >
+                    {groups[newLoan.borrowerGroup]?.members.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">💰 Amount ($)</label>
+                <input 
+                  type="number" 
+                  value={newLoan.amount}
+                  onChange={(e) => setNewLoan({...newLoan, amount: parseInt(e.target.value) || 0})}
+                  placeholder="Enter amount"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                />
+                <div className="flex gap-2 mt-2">
+                  {[200, 500, 1000, 2000].map(amt => (
+                    <button 
+                      key={amt}
+                      onClick={() => setNewLoan({...newLoan, amount: amt})}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium ${newLoan.amount === amt ? 'bg-purple-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                    >
+                      ${amt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Collateral Type */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">🔒 Security Type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    onClick={() => setNewLoan({...newLoan, collateralType: 'item'})}
+                    className={`p-3 rounded-xl text-sm font-medium transition-all ${newLoan.collateralType === 'item' ? 'bg-purple-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    📦 Physical Collateral
+                  </button>
+                  <button 
+                    onClick={() => setNewLoan({...newLoan, collateralType: 'guarantor'})}
+                    className={`p-3 rounded-xl text-sm font-medium transition-all ${newLoan.collateralType === 'guarantor' ? 'bg-purple-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    🤝 Member Guarantor
+                  </button>
+                </div>
+              </div>
+
+              {/* Collateral Details */}
+              {newLoan.collateralType === 'item' ? (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">📦 Collateral Description</label>
+                  <textarea 
+                    value={newLoan.collateralDescription}
+                    onChange={(e) => setNewLoan({...newLoan, collateralDescription: e.target.value})}
+                    placeholder="Describe the collateral (must be worth more than loan amount)&#10;e.g., Car title - 2018 Toyota Camry"
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none resize-none text-sm"
+                  />
+                  <p className="text-xs text-amber-600 mt-1">⚠️ Collateral must be worth MORE than ${newLoan.amount}</p>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">🤝 Guarantor (Must NOT have received Njangi yet)</label>
+                  {(() => {
+                    const eligible = getEligibleGuarantors();
+                    if (eligible.length === 0) {
+                      return <p className="text-red-500 text-sm">No eligible guarantors - all members have received benefits</p>;
+                    }
+                    return (
+                      <select 
+                        value={`${newLoan.guarantorGroup}-${newLoan.guarantorIdx}`}
+                        onChange={(e) => {
+                          const [g, m] = e.target.value.split('-').map(Number);
+                          setNewLoan({...newLoan, guarantorGroup: g, guarantorIdx: m});
+                        }}
+                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                      >
+                        {eligible.map((e, i) => (
+                          <option key={i} value={`${e.groupIdx}-${e.memberIdx}`}>{e.member} ({e.groupName})</option>
+                        ))}
+                      </select>
+                    );
+                  })()}
+                  <p className="text-xs text-blue-600 mt-1">ℹ️ Guarantor's future Njangi benefit will cover the loan if not repaid</p>
+                </div>
+              )}
+
+              {/* Purpose */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">📝 Purpose (Optional)</label>
+                <input 
+                  type="text" 
+                  value={newLoan.purpose}
+                  onChange={(e) => setNewLoan({...newLoan, purpose: e.target.value})}
+                  placeholder="e.g., Medical emergency, Business investment"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-sm"
+                />
+              </div>
+
+              {/* Due Date */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">📅 Repayment Due Date</label>
+                <input 
+                  type="date" 
+                  value={newLoan.dueDate}
+                  onChange={(e) => setNewLoan({...newLoan, dueDate: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button onClick={createLoan} className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white py-3 rounded-xl font-bold transition-all shadow-lg">
+                ✅ Approve Loan
+              </button>
+              <button onClick={() => setShowNewLoanModal(false)} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl transition-all">
+                Cancel
+              </button>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
       {/* WhatsApp Modal */}
       {showWhatsAppModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-lg max-h-[80vh] flex flex-col" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">📱 Share to WhatsApp</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">📱 Share to WhatsApp</h3>
+              <button onClick={() => setShowWhatsAppModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <div className="flex-1 overflow-auto mb-4">
               <pre className="bg-gray-100 p-4 rounded-xl text-sm whitespace-pre-wrap font-sans">{whatsAppMessage}</pre>
             </div>
@@ -2119,7 +2692,10 @@ export default function NikomNiMankon() {
       {showReportModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-2xl max-h-[90vh] flex flex-col" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">📊 Meeting Report Generator</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xl font-bold text-gray-800">📊 Meeting Report Generator</h3>
+              <button onClick={() => setShowReportModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <p className="text-gray-500 text-sm mb-4">{meetings[selectedMeeting]?.full} - {meetings[selectedMeeting]?.host}</p>
             
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -2129,7 +2705,7 @@ export default function NikomNiMankon() {
                 
                 {[
                   { key: 'includeNjangi', label: '💰 Njangi Payments', desc: '$1,000 group payments' },
-                  { key: 'includeSavings', label: '🏦 Savings Fund', desc: '$100 savings' },
+                  { key: 'includeSavings', label: '🏦 Mutual Fund', desc: '$100 mutual fund' },
                   { key: 'includeHostFee', label: '🍽️ Host Fee', desc: '$20 host fee' },
                   { key: 'includeAttendance', label: '✋ Attendance', desc: 'Who was present' },
                   { key: 'includePaymentMethods', label: '💳 Payment Methods', desc: 'Zelle, CashApp, etc.' },
@@ -2198,7 +2774,10 @@ export default function NikomNiMankon() {
       {showSettingsModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-6">⚙️ Admin Settings</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-800">⚙️ Admin Settings</h3>
+              <button onClick={() => setShowSettingsModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             
             <div className="space-y-4">
               {/* Security Section */}
@@ -2239,7 +2818,7 @@ export default function NikomNiMankon() {
                 <div className="space-y-2">
                   {[
                     {key: 'njangi', label: 'Njangi Payments', icon: '💰', desc: 'Show $1,000 group payments'},
-                    {key: 'savings', label: 'Savings Fund', icon: '🏦', desc: 'Show $100 savings payments'},
+                    {key: 'savings', label: 'Mutual Fund', icon: '🏦', desc: 'Show $100 mutual fund payments'},
                     {key: 'hostFee', label: 'Host Fee', icon: '🍽️', desc: 'Show $20 host fee payments'}
                   ].map(item => (
                     <div key={item.key} className="flex items-center justify-between p-3 bg-white rounded-lg hover:shadow-md transition-all">
@@ -2272,7 +2851,7 @@ export default function NikomNiMankon() {
                     💰 Njangi: {visibility.njangi ? '✓ Visible' : '✗ Hidden'}
                   </span>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${visibility.savings ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    🏦 Savings: {visibility.savings ? '✓ Visible' : '✗ Hidden'}
+                    🏦 Mutual Fund: {visibility.savings ? '✓ Visible' : '✗ Hidden'}
                   </span>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${visibility.hostFee ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     🍽️ Host Fee: {visibility.hostFee ? '✓ Visible' : '✗ Hidden'}
@@ -2303,7 +2882,10 @@ export default function NikomNiMankon() {
       {showAddMemberModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-md" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">➕ Add New Member</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">➕ Add New Member</h3>
+              <button onClick={() => { setShowAddMemberModal(false); setNewMemberName(''); }} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <input type="text" value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} placeholder="Full name" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-3" />
             <select value={newMemberGroup} onChange={(e) => setNewMemberGroup(parseInt(e.target.value))} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-4">
               {groups.map((g, i) => <option key={i} value={i}>{g.name} ({g.members.length} members)</option>)}
@@ -2320,7 +2902,10 @@ export default function NikomNiMankon() {
       {showNotesModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <GlassCard className="p-6 w-full max-w-lg" gradient>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">📝 Meeting Notes</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xl font-bold text-gray-800">📝 Meeting Notes</h3>
+              <button onClick={() => setShowNotesModal(false)} className="w-8 h-8 bg-gray-200 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all text-gray-600 font-bold">✕</button>
+            </div>
             <p className="text-gray-500 text-sm mb-4">{meetings[editingNotes.meetingIdx]?.full} - {meetings[editingNotes.meetingIdx]?.host}</p>
             
             <textarea 
@@ -2877,16 +3462,18 @@ export default function NikomNiMankon() {
               </div>
             </GlassCard>
             
-            {/* Savings Overview with Ledger Stats */}
+            {/* Mutual Fund Overview with Ledger Stats */}
             {(() => {
               const ledgerStats = getOverallSavingsStats();
+              const fundBalance = getMutualFundBalance();
+              const loanStats = getLoanStats();
               return (
                 <div className="bg-gradient-to-r from-purple-500 via-violet-500 to-indigo-600 rounded-2xl p-5 text-white shadow-xl">
                   <div className="flex justify-between items-start flex-wrap gap-4">
                     <div>
                       <p className="text-purple-100 text-sm">{currentMeeting?.full}</p>
-                      <h2 className="text-2xl font-bold">🏦 Savings Fund</h2>
-                      <p className="text-purple-200 text-sm mt-1">$100 per member per meeting</p>
+                      <h2 className="text-2xl font-bold">🏦 Mutual Fund</h2>
+                      <p className="text-purple-200 text-sm mt-1">$100 per member • Available for member loans</p>
                       
                       {/* Status badges */}
                       <div className="flex gap-2 mt-3 flex-wrap">
@@ -2904,24 +3491,52 @@ export default function NikomNiMankon() {
                     <div className="text-right">
                       <div className="bg-white/20 backdrop-blur rounded-xl p-4 mb-2">
                         <p className="text-3xl font-bold">${ledgerStats.totalCollected.toLocaleString()}</p>
-                        <p className="text-purple-100 text-sm">of ${ledgerStats.expectedTotal.toLocaleString()} expected</p>
+                        <p className="text-purple-100 text-sm">Total Collected</p>
                         <p className="text-purple-200 text-xs mt-1">{ledgerStats.collectionRate}% collection rate</p>
                       </div>
-                      {isAdmin && (
-                        <button 
-                          onClick={() => setShowSavingsReportModal(true)}
-                          className="bg-white/20 hover:bg-white/30 backdrop-blur px-3 py-2 rounded-xl text-sm font-medium transition-all"
-                        >
-                          📊 Savings Report
-                        </button>
-                      )}
+                      <div className="flex gap-2">
+                        {isAdmin && (
+                          <>
+                            <button 
+                              onClick={() => setShowLoanModal(true)}
+                              className="bg-orange-500/80 hover:bg-orange-500 backdrop-blur px-3 py-2 rounded-xl text-sm font-medium transition-all"
+                            >
+                              💳 Loans {loanStats.totalActive > 0 && `(${loanStats.totalActive})`}
+                            </button>
+                            <button 
+                              onClick={() => setShowSavingsReportModal(true)}
+                              className="bg-white/20 hover:bg-white/30 backdrop-blur px-3 py-2 rounded-xl text-sm font-medium transition-all"
+                            >
+                              📊 Report
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  
+                  {/* Loan Summary */}
+                  {isAdmin && (
+                    <div className="mt-4 grid grid-cols-3 gap-2">
+                      <div className="bg-white/10 backdrop-blur rounded-xl p-3 text-center">
+                        <p className="text-2xl font-bold">${fundBalance.availableBalance.toLocaleString()}</p>
+                        <p className="text-purple-200 text-xs">Available to Lend</p>
+                      </div>
+                      <div className="bg-orange-500/30 backdrop-blur rounded-xl p-3 text-center">
+                        <p className="text-2xl font-bold">${fundBalance.totalLoaned.toLocaleString()}</p>
+                        <p className="text-orange-200 text-xs">Out on Loan ({loanStats.totalActive})</p>
+                      </div>
+                      <div className="bg-green-500/30 backdrop-blur rounded-xl p-3 text-center">
+                        <p className="text-2xl font-bold">${loanStats.totalRepaidAmount.toLocaleString()}</p>
+                        <p className="text-green-200 text-xs">Repaid ({loanStats.totalRepaid})</p>
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Outstanding amounts */}
                   {isAdmin && ledgerStats.totalOwed > 0 && (
                     <div className="mt-4 bg-red-500/30 border border-red-300 rounded-xl p-3 backdrop-blur">
-                      <p className="text-xs text-red-200 mb-1">⚠️ OUTSTANDING BALANCE</p>
+                      <p className="text-xs text-red-200 mb-1">⚠️ OUTSTANDING CONTRIBUTIONS</p>
                       <p className="text-xl font-bold">${ledgerStats.totalOwed.toLocaleString()} owed by {ledgerStats.membersBehind} members</p>
                     </div>
                   )}
@@ -2932,8 +3547,8 @@ export default function NikomNiMankon() {
             <GlassCard className="p-4 shadow-lg">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <div>
-                  <h3 className="font-bold text-gray-800">💰 Member Savings Status</h3>
-                  <p className="text-xs text-gray-500">Click on a member to view/edit their savings ledger</p>
+                  <h3 className="font-bold text-gray-800">💰 Member Contribution Status</h3>
+                  <p className="text-xs text-gray-500">Click on a member to view/edit their contribution ledger</p>
                 </div>
                 <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-sm w-48" />
               </div>
@@ -3343,7 +3958,7 @@ export default function NikomNiMankon() {
                       </div>
                       <div className="bg-purple-50 p-4 rounded-xl text-center">
                         <p className="text-2xl font-bold text-purple-600">${sStats.collected.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">🏦 Savings</p>
+                        <p className="text-xs text-gray-500">🏦 Mutual Fund</p>
                       </div>
                       <div className="bg-teal-50 p-4 rounded-xl text-center">
                         <p className="text-2xl font-bold text-teal-600">${hStats.collected.toLocaleString()}</p>
