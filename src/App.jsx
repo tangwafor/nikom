@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // =====================================================
 // SUPABASE CONFIGURATION - TA-TECHSOLUTIONS
+// 📞 (571) 447-2698
 // =====================================================
 const SUPABASE_URL = 'https://lzgevkzjuxwpnafudxwe.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6Z2V2a3pqdXh3cG5hZnVkeHdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczNzY3NjAsImV4cCI6MjA4Mjk1Mjc2MH0.e4quPaPpu-Z-xBBYvcI0ZPDfCA5HjkzZZSpUkz8ei3A';
@@ -10,7 +11,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // =====================================================
-// DEFAULT DATA (Fallback if Supabase fails)
+// DEFAULT DATA
 // =====================================================
 const defaultGroups = [
   { id: 1, name: 'Group One', color: '#059669', gradient: 'from-emerald-500 to-green-600', members: ['Julius Ndenga', 'Vivalis Mbongdula', 'Christopher Chibayem', 'Asandome M-Angwafo III', 'Dephine Ndonga', 'Alexis Nkwaff', 'Bih Nicole Ndenga', 'Tsi Nkwenti-Angwafo III', 'Warah Franklin', 'Nji Kenneth', 'Kenneth Forloh', 'Nathan Fogweh'] },
@@ -39,33 +40,131 @@ const rules = [
   { title: 'Vision', text: 'Create the most formidable financial hub for our people!', icon: '🌱' },
   { title: 'Unity', text: 'Rally to support each other succeed.', icon: '🤝' },
   { title: 'Culture', text: 'Learn and uphold our Mankon culture.', icon: '🏛️' },
-  { title: 'Group Njangi ($1,000)', text: 'Pay $1,000 to your GROUP\'s beneficiary.', icon: '💰' },
-  { title: 'Savings Fund ($100)', text: 'EVERYONE contributes $100 to savings.', icon: '🏦' },
-  { title: 'Host/Food Fee ($20)', text: 'EVERYONE gives $20 to the host for entertainment.', icon: '🍽️' },
+  { title: 'Group Njangi', text: 'Pay $1,000 to your GROUP\'s beneficiary.', icon: '💰', amount: '$1,000' },
+  { title: 'Savings Fund', text: 'EVERYONE contributes $100 to savings.', icon: '🏦', amount: '$100' },
+  { title: 'Host Fee', text: 'EVERYONE gives $20 to the host.', icon: '🍽️', amount: '$20' },
   { title: 'Meeting Time', text: '3pm to 6pm prompt.', icon: '⏰' },
-  { title: 'Late Payment Fine', text: '$250.00', icon: '⚠️' },
-  { title: 'Lateness Fine', text: '$50.00', icon: '🚨' },
-  { title: 'Confirmation', text: 'Confirm before 6pm cutoff.', icon: '✅' }
+  { title: 'Late Payment', text: 'Fine for late payment.', icon: '⚠️', amount: '$250' },
 ];
 
-const PAYMENT_METHODS = ['Cash', 'Zelle', 'CashApp', 'Venmo', 'Bank Transfer', 'Check', 'Other'];
-const LOCAL_KEY = 'nikom_supabase_local_v1';
+const LOCAL_KEY = 'nikom_premium_v3';
+
+const STATUS_OPTIONS = [
+  { id: 'coming', label: 'Coming', icon: '✅', color: '#10B981' },
+  { id: 'onway', label: 'On My Way', icon: '🚗', color: '#3B82F6' },
+  { id: 'almost', label: 'Almost There', icon: '📍', color: '#8B5CF6' },
+  { id: 'late', label: 'Running Late', icon: '⏰', color: '#F59E0B' },
+  { id: 'cantmake', label: "Can't Make It", icon: '❌', color: '#EF4444' },
+  { id: 'arrived', label: 'Arrived!', icon: '🎉', color: '#059669' },
+];
 
 // =====================================================
-// SVG COMPONENTS
+// SVG & UI COMPONENTS
 // =====================================================
 const RaffiaPalmSVG = ({ className }) => (
   <svg viewBox="0 0 120 180" className={className}>
-    <path d="M55 180 L55 90 Q55 85 60 85 Q65 85 65 90 L65 180" fill="#5D4037"/>
+    <defs>
+      <linearGradient id="trunkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#8B5A2B"/>
+        <stop offset="100%" stopColor="#5D4037"/>
+      </linearGradient>
+      <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#2E7D32"/>
+        <stop offset="100%" stopColor="#1B5E20"/>
+      </linearGradient>
+    </defs>
+    <path d="M55 180 L55 90 Q55 85 60 85 Q65 85 65 90 L65 180" fill="url(#trunkGrad)"/>
     <path d="M57 180 L57 95 Q57 90 60 90 Q63 90 63 95 L63 180" fill="#6D4C41"/>
-    <path d="M60 85 Q20 60 5 30 Q15 50 60 82" fill="#1B5E20"/>
+    <path d="M60 85 Q20 60 5 30 Q15 50 60 82" fill="url(#leafGrad)"/>
     <path d="M60 82 Q25 55 10 20 Q20 45 60 78" fill="#2E7D32"/>
-    <path d="M60 85 Q100 60 115 30 Q105 50 60 82" fill="#1B5E20"/>
+    <path d="M60 85 Q100 60 115 30 Q105 50 60 82" fill="url(#leafGrad)"/>
     <path d="M60 82 Q95 55 110 20 Q100 45 60 78" fill="#2E7D32"/>
-    <path d="M60 80 Q58 40 50 5 Q58 35 60 75" fill="#1B5E20"/>
+    <path d="M60 80 Q58 40 50 5 Q58 35 60 75" fill="url(#leafGrad)"/>
     <path d="M60 80 Q62 40 70 5 Q62 35 60 75" fill="#2E7D32"/>
     <ellipse cx="60" cy="88" rx="10" ry="6" fill="#5D4037"/>
+    <circle cx="55" cy="92" r="3" fill="#8B4513"/>
+    <circle cx="65" cy="92" r="3" fill="#8B4513"/>
   </svg>
+);
+
+const MemberAvatar = ({ name, photo, size = 'md', color = '#059669', onClick, isAdmin }) => {
+  const sizes = { sm: 'w-8 h-8 text-xs', md: 'w-12 h-12 text-sm', lg: 'w-16 h-16 text-lg', xl: 'w-20 h-20 text-xl' };
+  const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  
+  return (
+    <div className={`relative ${sizes[size]} rounded-full overflow-hidden shadow-lg ring-2 ring-white cursor-pointer transition-all hover:scale-110 hover:ring-4`} style={{ backgroundColor: color }} onClick={onClick}>
+      {photo ? (
+        <img src={photo} alt={name} className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-white font-bold">{initials}</div>
+      )}
+      {isAdmin && (
+        <div className="absolute inset-0 bg-black/0 hover:bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-all">
+          <span className="text-white text-xs">📷</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const GlassCard = ({ children, className = '', gradient = false }) => (
+  <div className={`backdrop-blur-md bg-white/80 rounded-2xl shadow-xl border border-white/20 ${gradient ? 'bg-gradient-to-br from-white/90 to-white/70' : ''} ${className}`}>
+    {children}
+  </div>
+);
+
+const AnimatedCounter = ({ value, prefix = '', suffix = '' }) => {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const duration = 1000;
+    const steps = 30;
+    const increment = value / steps;
+    let current = 0;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= value) { setDisplay(value); clearInterval(timer); }
+      else { setDisplay(Math.floor(current)); }
+    }, duration / steps);
+    return () => clearInterval(timer);
+  }, [value]);
+  return <span>{prefix}{display.toLocaleString()}{suffix}</span>;
+};
+
+const ProgressRing = ({ progress, size = 60, strokeWidth = 6, color = '#059669' }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (progress / 100) * circumference;
+  return (
+    <svg width={size} height={size} className="transform -rotate-90">
+      <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="#e5e7eb" strokeWidth={strokeWidth} />
+      <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-1000" />
+      <text x="50%" y="50%" textAnchor="middle" dy=".3em" className="fill-current text-gray-700 font-bold text-sm" transform={`rotate(90 ${size/2} ${size/2})`}>{progress}%</text>
+    </svg>
+  );
+};
+
+const Confetti = () => (
+  <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+    {[...Array(50)].map((_, i) => (
+      <div key={i} className="absolute animate-bounce" style={{
+        left: `${Math.random() * 100}%`,
+        top: `-20px`,
+        animation: `fall ${2 + Math.random() * 2}s linear forwards`,
+        animationDelay: `${Math.random() * 0.5}s`,
+        fontSize: `${16 + Math.random() * 16}px`
+      }}>
+        {['🌴', '💰', '🌿', '🎉', '✨', '💎', '🌟', '🎊'][Math.floor(Math.random() * 8)]}
+      </div>
+    ))}
+    <style>{`@keyframes fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }`}</style>
+  </div>
+);
+
+const PulsingDot = ({ color = '#10B981' }) => (
+  <span className="relative flex h-3 w-3">
+    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: color }}></span>
+    <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: color }}></span>
+  </span>
 );
 
 // =====================================================
@@ -85,7 +184,6 @@ export default function NikomNiMankon() {
   // Connection State
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isLoading, setIsLoading] = useState(true);
-  const [syncStatus, setSyncStatus] = useState('synced');
 
   // Core State
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -95,14 +193,30 @@ export default function NikomNiMankon() {
   const [groups, setGroups] = useState(defaultGroups);
   const [meetings, setMeetings] = useState(defaultMeetings);
   
-  // Payment States (using local keys for simplicity)
+  // Payment & Member States
   const [njangiPayments, setNjangiPayments] = useState({});
   const [hostFeePayments, setHostFeePayments] = useState({});
   const [savingsFundPayments, setSavingsFundPayments] = useState({});
   const [attendance, setAttendance] = useState({});
-  const [paymentMethods, setPaymentMethods] = useState({});
+  const [memberPhotos, setMemberPhotos] = useState({});
+  const [memberContacts, setMemberContacts] = useState({});
   const [beneficiaryOverrides, setBeneficiaryOverrides] = useState({});
   const [meetingNotes, setMeetingNotes] = useState({});
+  const [memberStatuses, setMemberStatuses] = useState({});
+  const [statusMessages, setStatusMessages] = useState({});
+  const [showCheckinModal, setShowCheckinModal] = useState(false);
+  const [checkinMember, setCheckinMember] = useState({ groupIdx: 0, memberIdx: 0 });
+  const [checkinMessage, setCheckinMessage] = useState('');
+  const [memberLocations, setMemberLocations] = useState({});
+  const [carpoolOffers, setCarpoolOffers] = useState({});
+  const [carpoolRequests, setCarpoolRequests] = useState({});
+  const [showCarpoolModal, setShowCarpoolModal] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [selectedLocationMember, setSelectedLocationMember] = useState(null);
+  
+  // Meeting venue location (can be updated per meeting)
+  const [venueLocation, setVenueLocation] = useState({ lat: 39.2904, lng: -76.6122, address: 'Baltimore, MD' });
 
   // Settings
   const [visibility, setVisibility] = useState({ njangi: false, savings: false, hostFee: false });
@@ -120,14 +234,14 @@ export default function NikomNiMankon() {
   const [editingBeneficiary, setEditingBeneficiary] = useState({ meetingIdx: 0, groupIdx: 0 });
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [editingNotes, setEditingNotes] = useState({ meetingIdx: 0, note: '' });
-  const [showEditMemberModal, setShowEditMemberModal] = useState(false);
-  const [editingMember, setEditingMember] = useState({ groupIdx: 0, memberIdx: 0, name: '' });
+  const [showMemberModal, setShowMemberModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState({ groupIdx: 0, memberIdx: 0 });
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberGroup, setNewMemberGroup] = useState(0);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showChartsModal, setShowChartsModal] = useState(false);
-  const reportRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const totalMembers = useMemo(() => groups.reduce((a, g) => a + g.members.length, 0), [groups]);
 
@@ -140,30 +254,19 @@ export default function NikomNiMankon() {
     const handleOffline = () => setIsOnline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
 
   const loadData = async () => {
     setIsLoading(true);
-    
-    // Try to load from Supabase first
     try {
       const { data: settingsData } = await supabase.from('app_settings').select('*').limit(1).single();
       if (settingsData) {
         if (settingsData.admin_password_hash) setAdminPassword(settingsData.admin_password_hash);
         if (settingsData.visibility) setVisibility(settingsData.visibility);
-        if (settingsData.whatsapp_options) setWhatsAppOptions(settingsData.whatsapp_options);
       }
-      setSyncStatus('synced');
-    } catch (e) {
-      console.log('Using local/default data');
-      setSyncStatus('offline');
-    }
+    } catch (e) { console.log('Using local data'); }
 
-    // Load local data
     const saved = localStorage.getItem(LOCAL_KEY);
     if (saved) {
       try {
@@ -172,34 +275,35 @@ export default function NikomNiMankon() {
         if (data.hostFeePayments) setHostFeePayments(data.hostFeePayments);
         if (data.savingsFundPayments) setSavingsFundPayments(data.savingsFundPayments);
         if (data.attendance) setAttendance(data.attendance);
-        if (data.paymentMethods) setPaymentMethods(data.paymentMethods);
+        if (data.memberPhotos) setMemberPhotos(data.memberPhotos);
+        if (data.memberContacts) setMemberContacts(data.memberContacts);
+        if (data.memberStatuses) setMemberStatuses(data.memberStatuses);
+        if (data.statusMessages) setStatusMessages(data.statusMessages);
+        if (data.memberLocations) setMemberLocations(data.memberLocations);
+        if (data.carpoolOffers) setCarpoolOffers(data.carpoolOffers);
+        if (data.carpoolRequests) setCarpoolRequests(data.carpoolRequests);
         if (data.beneficiaryOverrides) setBeneficiaryOverrides(data.beneficiaryOverrides);
         if (data.meetingNotes) setMeetingNotes(data.meetingNotes);
         if (data.groups) setGroups(data.groups);
         if (data.isAdmin) setIsAdmin(data.isAdmin);
-      } catch (e) { console.error('Error loading local data'); }
+      } catch (e) { console.error('Error loading'); }
     }
-
     setIsLoading(false);
   };
 
-  // Save to localStorage whenever data changes
   useEffect(() => {
     if (!isLoading) {
-      const data = {
-        njangiPayments, hostFeePayments, savingsFundPayments, attendance,
-        paymentMethods, beneficiaryOverrides, meetingNotes, groups, isAdmin
-      };
+      const data = { njangiPayments, hostFeePayments, savingsFundPayments, attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, memberLocations, carpoolOffers, carpoolRequests, beneficiaryOverrides, meetingNotes, groups, isAdmin };
       localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
     }
-  }, [njangiPayments, hostFeePayments, savingsFundPayments, attendance, paymentMethods, beneficiaryOverrides, meetingNotes, groups, isAdmin, isLoading]);
+  }, [njangiPayments, hostFeePayments, savingsFundPayments, attendance, memberPhotos, memberContacts, memberStatuses, statusMessages, memberLocations, carpoolOffers, carpoolRequests, beneficiaryOverrides, meetingNotes, groups, isAdmin, isLoading]);
 
   // =====================================================
   // AUTH FUNCTIONS
   // =====================================================
   const handleLogin = () => {
     if (passwordInput === adminPassword) {
-      setIsAdmin(true); setShowLoginModal(false); setPasswordInput(''); setLoginError('');
+      setIsAdmin(true); setShowLoginModal(false); setPasswordInput(''); setLoginError(''); triggerConfetti();
     } else { setLoginError('Incorrect password'); }
   };
 
@@ -209,15 +313,38 @@ export default function NikomNiMankon() {
     if (passwordInput !== adminPassword) { setLoginError('Current password incorrect'); return; }
     if (newPassword.length < 4) { setLoginError('Min 4 characters'); return; }
     if (newPassword !== confirmPassword) { setLoginError('Passwords do not match'); return; }
-    
     setAdminPassword(newPassword);
-    try {
-      await supabase.from('app_settings').update({ admin_password_hash: newPassword }).neq('id', '');
-    } catch (e) { console.log('Password saved locally only'); }
+    try { await supabase.from('app_settings').update({ admin_password_hash: newPassword }).neq('id', ''); } catch (e) {}
+    setShowChangePasswordModal(false); setPasswordInput(''); setNewPassword(''); setConfirmPassword(''); setLoginError(''); triggerConfetti();
+  };
+
+  // =====================================================
+  // MEMBER PHOTO FUNCTIONS
+  // =====================================================
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     
-    setShowChangePasswordModal(false);
-    setPasswordInput(''); setNewPassword(''); setConfirmPassword(''); setLoginError('');
-    triggerConfetti();
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const key = `${selectedMember.groupIdx}-${selectedMember.memberIdx}`;
+      setMemberPhotos(prev => ({ ...prev, [key]: reader.result }));
+      triggerConfetti();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const openMemberModal = (groupIdx, memberIdx) => {
+    setSelectedMember({ groupIdx, memberIdx });
+    setShowMemberModal(true);
+  };
+
+  const getMemberPhoto = (groupIdx, memberIdx) => memberPhotos[`${groupIdx}-${memberIdx}`];
+  const getMemberContact = (groupIdx, memberIdx) => memberContacts[`${groupIdx}-${memberIdx}`] || {};
+
+  const updateMemberContact = (field, value) => {
+    const key = `${selectedMember.groupIdx}-${selectedMember.memberIdx}`;
+    setMemberContacts(prev => ({ ...prev, [key]: { ...getMemberContact(selectedMember.groupIdx, selectedMember.memberIdx), [field]: value } }));
   };
 
   // =====================================================
@@ -267,48 +394,26 @@ export default function NikomNiMankon() {
   // =====================================================
   const getGroupMeetingStats = (meetingIdx, groupIdx) => {
     const group = groups[groupIdx];
-    let njangiPaid = 0, hostFeePaid = 0, savingsPaid = 0;
-    group.members.forEach((_, mIdx) => {
-      if (njangiPayments[`${meetingIdx}-${groupIdx}-${mIdx}`]) njangiPaid++;
-      if (hostFeePayments[`${meetingIdx}-${groupIdx}-${mIdx}`]) hostFeePaid++;
-      if (savingsFundPayments[`${meetingIdx}-${groupIdx}-${mIdx}`]) savingsPaid++;
-    });
-    return {
-      njangiPaid, njangiTotal: group.members.length,
-      njangiCollected: njangiPaid * 1000, njangiTarget: group.members.length * 1000,
-      njangiPercentage: Math.round((njangiPaid / group.members.length) * 100),
-      hostFeePaid, hostFeeCollected: hostFeePaid * 20,
-      savingsPaid, savingsCollected: savingsPaid * 100
-    };
+    let njangiPaid = 0;
+    group.members.forEach((_, mIdx) => { if (njangiPayments[`${meetingIdx}-${groupIdx}-${mIdx}`]) njangiPaid++; });
+    return { njangiPaid, njangiTotal: group.members.length, njangiCollected: njangiPaid * 1000, njangiTarget: group.members.length * 1000, njangiPercentage: Math.round((njangiPaid / group.members.length) * 100) };
   };
 
   const getMeetingHostFeeStats = (meetingIdx) => {
     let totalPaid = 0;
-    groups.forEach((group, gIdx) => {
-      group.members.forEach((_, mIdx) => {
-        if (hostFeePayments[`${meetingIdx}-${gIdx}-${mIdx}`]) totalPaid++;
-      });
-    });
+    groups.forEach((group, gIdx) => { group.members.forEach((_, mIdx) => { if (hostFeePayments[`${meetingIdx}-${gIdx}-${mIdx}`]) totalPaid++; }); });
     return { paid: totalPaid, total: totalMembers, collected: totalPaid * 20, target: totalMembers * 20, percentage: Math.round((totalPaid / totalMembers) * 100) };
   };
 
   const getMeetingSavingsStats = (meetingIdx) => {
     let totalPaid = 0;
-    groups.forEach((group, gIdx) => {
-      group.members.forEach((_, mIdx) => {
-        if (savingsFundPayments[`${meetingIdx}-${gIdx}-${mIdx}`]) totalPaid++;
-      });
-    });
+    groups.forEach((group, gIdx) => { group.members.forEach((_, mIdx) => { if (savingsFundPayments[`${meetingIdx}-${gIdx}-${mIdx}`]) totalPaid++; }); });
     return { paid: totalPaid, total: totalMembers, collected: totalPaid * 100, target: totalMembers * 100, percentage: Math.round((totalPaid / totalMembers) * 100) };
   };
 
   const getMeetingAttendanceStats = (meetingIdx) => {
     let present = 0;
-    groups.forEach((group, gIdx) => {
-      group.members.forEach((_, mIdx) => {
-        if (attendance[`${meetingIdx}-${gIdx}-${mIdx}`]) present++;
-      });
-    });
+    groups.forEach((group, gIdx) => { group.members.forEach((_, mIdx) => { if (attendance[`${meetingIdx}-${gIdx}-${mIdx}`]) present++; }); });
     return { present, total: totalMembers, percentage: Math.round((present / totalMembers) * 100) };
   };
 
@@ -317,12 +422,7 @@ export default function NikomNiMankon() {
     Object.values(njangiPayments).forEach(v => { if (v) totalNjangi++; });
     Object.values(hostFeePayments).forEach(v => { if (v) totalHostFee++; });
     Object.values(savingsFundPayments).forEach(v => { if (v) totalSavings++; });
-    return {
-      totalNjangiCollected: totalNjangi * 1000,
-      totalHostFeeCollected: totalHostFee * 20,
-      totalSavingsCollected: totalSavings * 100,
-      totalCollected: (totalNjangi * 1000) + (totalHostFee * 20) + (totalSavings * 100)
-    };
+    return { totalNjangiCollected: totalNjangi * 1000, totalHostFeeCollected: totalHostFee * 20, totalSavingsCollected: totalSavings * 100, totalCollected: (totalNjangi * 1000) + (totalHostFee * 20) + (totalSavings * 100) };
   };
 
   const overallStats = getOverallStats();
@@ -336,37 +436,18 @@ export default function NikomNiMankon() {
   // =====================================================
   const addNewMember = () => {
     if (!newMemberName.trim()) return;
-    setGroups(prev => prev.map((g, idx) => {
-      if (idx === newMemberGroup) return { ...g, members: [...g.members, newMemberName.trim()] };
-      return g;
-    }));
+    setGroups(prev => prev.map((g, idx) => idx === newMemberGroup ? { ...g, members: [...g.members, newMemberName.trim()] } : g));
     setNewMemberName(''); setShowAddMemberModal(false); triggerConfetti();
-  };
-
-  const saveMemberName = () => {
-    if (!isAdmin) return;
-    const { groupIdx, memberIdx, name } = editingMember;
-    setGroups(prev => prev.map((g, gIdx) => {
-      if (gIdx === groupIdx) {
-        const newMembers = [...g.members];
-        newMembers[memberIdx] = name;
-        return { ...g, members: newMembers };
-      }
-      return g;
-    }));
-    setShowEditMemberModal(false); triggerConfetti();
   };
 
   const saveBeneficiaryOverride = (memberIdx) => {
     if (!isAdmin) return;
-    const { meetingIdx, groupIdx } = editingBeneficiary;
-    setBeneficiaryOverrides(prev => ({ ...prev, [`${meetingIdx}-${groupIdx}`]: memberIdx }));
+    setBeneficiaryOverrides(prev => ({ ...prev, [`${editingBeneficiary.meetingIdx}-${editingBeneficiary.groupIdx}`]: memberIdx }));
     setShowBeneficiaryModal(false); triggerConfetti();
   };
 
   const clearBeneficiaryOverride = () => {
-    const { meetingIdx, groupIdx } = editingBeneficiary;
-    setBeneficiaryOverrides(prev => { const n = { ...prev }; delete n[`${meetingIdx}-${groupIdx}`]; return n; });
+    setBeneficiaryOverrides(prev => { const n = { ...prev }; delete n[`${editingBeneficiary.meetingIdx}-${editingBeneficiary.groupIdx}`]; return n; });
     setShowBeneficiaryModal(false);
   };
 
@@ -377,65 +458,289 @@ export default function NikomNiMankon() {
   };
 
   // =====================================================
+  // CHECK-IN FUNCTIONS
+  // =====================================================
+  const getMemberStatus = (meetingIdx, groupIdx, memberIdx) => {
+    const key = `${meetingIdx}-${groupIdx}-${memberIdx}`;
+    return memberStatuses[key] || null;
+  };
+
+  const getStatusMessage = (meetingIdx, groupIdx, memberIdx) => {
+    const key = `${meetingIdx}-${groupIdx}-${memberIdx}`;
+    return statusMessages[key] || '';
+  };
+
+  const updateMemberStatus = (statusId) => {
+    const key = `${selectedMeeting}-${checkinMember.groupIdx}-${checkinMember.memberIdx}`;
+    setMemberStatuses(prev => ({ ...prev, [key]: statusId }));
+    if (checkinMessage.trim()) {
+      setStatusMessages(prev => ({ ...prev, [key]: checkinMessage.trim() }));
+    }
+    setShowCheckinModal(false);
+    setCheckinMessage('');
+    triggerConfetti();
+  };
+
+  const clearMemberStatus = () => {
+    const key = `${selectedMeeting}-${checkinMember.groupIdx}-${checkinMember.memberIdx}`;
+    setMemberStatuses(prev => { const n = {...prev}; delete n[key]; return n; });
+    setStatusMessages(prev => { const n = {...prev}; delete n[key]; return n; });
+    setShowCheckinModal(false);
+    setCheckinMessage('');
+  };
+
+  const getMeetingStatusStats = (meetingIdx) => {
+    let coming = 0, onway = 0, cantmake = 0, arrived = 0, noresponse = 0;
+    groups.forEach((group, gIdx) => {
+      group.members.forEach((_, mIdx) => {
+        const status = getMemberStatus(meetingIdx, gIdx, mIdx);
+        if (status === 'coming' || status === 'almost') coming++;
+        else if (status === 'onway' || status === 'late') onway++;
+        else if (status === 'cantmake') cantmake++;
+        else if (status === 'arrived') arrived++;
+        else noresponse++;
+      });
+    });
+    return { coming, onway, cantmake, arrived, noresponse, total: totalMembers };
+  };
+
+  const getAllStatusUpdates = (meetingIdx) => {
+    const updates = [];
+    groups.forEach((group, gIdx) => {
+      group.members.forEach((member, mIdx) => {
+        const status = getMemberStatus(meetingIdx, gIdx, mIdx);
+        if (status) {
+          const statusInfo = STATUS_OPTIONS.find(s => s.id === status);
+          updates.push({
+            member,
+            groupIdx: gIdx,
+            memberIdx: mIdx,
+            status: statusInfo,
+            message: getStatusMessage(meetingIdx, gIdx, mIdx),
+            groupColor: group.color,
+            groupName: group.name,
+            location: memberLocations[`${gIdx}-${mIdx}`],
+            eta: memberLocations[`${gIdx}-${mIdx}`]?.eta
+          });
+        }
+      });
+    });
+    // Sort by most recent (arrived first, then on way, etc.)
+    const order = ['arrived', 'almost', 'onway', 'late', 'coming', 'cantmake'];
+    updates.sort((a, b) => order.indexOf(a.status?.id) - order.indexOf(b.status?.id));
+    return updates;
+  };
+
+  // =====================================================
+  // LOCATION & ETA FUNCTIONS
+  // =====================================================
+  const calculateDistance = (lat1, lng1, lat2, lng2) => {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const calculateETA = (distance) => {
+    // Assume average speed of 30 mph in city
+    const hours = distance / 30;
+    const minutes = Math.round(hours * 60);
+    if (minutes < 1) return 'Less than 1 min';
+    if (minutes < 60) return `${minutes} min`;
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hrs}h ${mins}m`;
+  };
+
+  const shareMyLocation = (groupIdx, memberIdx) => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const distance = calculateDistance(latitude, longitude, venueLocation.lat, venueLocation.lng);
+        const eta = calculateETA(distance);
+        
+        setMemberLocations(prev => ({
+          ...prev,
+          [`${groupIdx}-${memberIdx}`]: {
+            lat: latitude,
+            lng: longitude,
+            distance: distance.toFixed(1),
+            eta,
+            timestamp: new Date().toISOString()
+          }
+        }));
+        
+        triggerConfetti();
+        
+        // Send notification to admin
+        if (notificationsEnabled && isAdmin) {
+          sendNotification(`📍 ${groups[groupIdx].members[memberIdx]} shared location - ${eta} away`);
+        }
+      },
+      (error) => {
+        alert('Unable to get location. Please enable location services.');
+        console.error(error);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const getMemberLocation = (groupIdx, memberIdx) => memberLocations[`${groupIdx}-${memberIdx}`];
+
+  // =====================================================
+  // NOTIFICATION FUNCTIONS
+  // =====================================================
+  const requestNotificationPermission = async () => {
+    if (!('Notification' in window)) {
+      alert('This browser does not support notifications');
+      return;
+    }
+    
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      setNotificationsEnabled(true);
+      sendNotification('🔔 Notifications enabled! You\'ll be notified when members arrive.');
+      triggerConfetti();
+    }
+  };
+
+  const sendNotification = (message) => {
+    if (notificationsEnabled && Notification.permission === 'granted') {
+      new Notification('Nikom Ni Mankon', {
+        body: message,
+        icon: '🌴',
+        badge: '🌴'
+      });
+    }
+  };
+
+  // Notify when someone arrives
+  useEffect(() => {
+    if (notificationsEnabled) {
+      const arrivedMembers = [];
+      groups.forEach((group, gIdx) => {
+        group.members.forEach((member, mIdx) => {
+          if (getMemberStatus(selectedMeeting, gIdx, mIdx) === 'arrived') {
+            arrivedMembers.push(member);
+          }
+        });
+      });
+    }
+  }, [memberStatuses, notificationsEnabled]);
+
+  // =====================================================
+  // CARPOOL FUNCTIONS
+  // =====================================================
+  const CARPOOL_AREAS = [
+    { id: 'baltimore', name: 'Baltimore', icon: '🏙️' },
+    { id: 'silverspring', name: 'Silver Spring', icon: '🌟' },
+    { id: 'columbia', name: 'Columbia', icon: '🏘️' },
+    { id: 'laurel', name: 'Laurel', icon: '🌿' },
+    { id: 'rockville', name: 'Rockville', icon: '🪨' },
+    { id: 'bowie', name: 'Bowie', icon: '🏹' },
+    { id: 'gaithersburg', name: 'Gaithersburg', icon: '🌳' },
+    { id: 'frederick', name: 'Frederick', icon: '⛰️' },
+    { id: 'annapolis', name: 'Annapolis', icon: '⚓' },
+    { id: 'dc', name: 'Washington DC', icon: '🏛️' },
+    { id: 'other', name: 'Other Area', icon: '📍' },
+  ];
+
+  const offerCarpool = (groupIdx, memberIdx, area, seats) => {
+    const key = `${selectedMeeting}-${groupIdx}-${memberIdx}`;
+    setCarpoolOffers(prev => ({
+      ...prev,
+      [key]: { area, seats, timestamp: new Date().toISOString() }
+    }));
+    triggerConfetti();
+  };
+
+  const requestCarpool = (groupIdx, memberIdx, area) => {
+    const key = `${selectedMeeting}-${groupIdx}-${memberIdx}`;
+    setCarpoolRequests(prev => ({
+      ...prev,
+      [key]: { area, timestamp: new Date().toISOString() }
+    }));
+    triggerConfetti();
+  };
+
+  const getCarpoolOffer = (meetingIdx, groupIdx, memberIdx) => carpoolOffers[`${meetingIdx}-${groupIdx}-${memberIdx}`];
+  const getCarpoolRequest = (meetingIdx, groupIdx, memberIdx) => carpoolRequests[`${meetingIdx}-${groupIdx}-${memberIdx}`];
+
+  const getCarpoolMatches = (meetingIdx) => {
+    const offers = [];
+    const requests = [];
+    
+    groups.forEach((group, gIdx) => {
+      group.members.forEach((member, mIdx) => {
+        const offer = getCarpoolOffer(meetingIdx, gIdx, mIdx);
+        const request = getCarpoolRequest(meetingIdx, gIdx, mIdx);
+        
+        if (offer) {
+          offers.push({ member, groupIdx: gIdx, memberIdx: mIdx, ...offer, groupName: group.name, groupColor: group.color });
+        }
+        if (request) {
+          requests.push({ member, groupIdx: gIdx, memberIdx: mIdx, ...request, groupName: group.name, groupColor: group.color });
+        }
+      });
+    });
+
+    // Match requests with offers in same area
+    const matches = [];
+    requests.forEach(req => {
+      const matchingOffers = offers.filter(off => off.area === req.area && off.seats > 0);
+      if (matchingOffers.length > 0) {
+        matches.push({ request: req, offers: matchingOffers });
+      }
+    });
+
+    return { offers, requests, matches };
+  };
+
+  const clearCarpool = (groupIdx, memberIdx) => {
+    const key = `${selectedMeeting}-${groupIdx}-${memberIdx}`;
+    setCarpoolOffers(prev => { const n = {...prev}; delete n[key]; return n; });
+    setCarpoolRequests(prev => { const n = {...prev}; delete n[key]; return n; });
+  };
+
+  // =====================================================
   // WHATSAPP FUNCTIONS
   // =====================================================
-  const generateMeetingSummary = (meetingIdx, options = whatsAppOptions) => {
-    const meeting = meetings[meetingIdx];
-    const hStats = getMeetingHostFeeStats(meetingIdx);
-    const sStats = getMeetingSavingsStats(meetingIdx);
-    let message = `🌴 *NIKOM NI MANKON* 🌴\n📅 *Meeting #${meetingIdx + 1}: ${meeting.full}*\n🏠 Host: ${meeting.host} (${meeting.city})\n\n`;
-    if (options.includeNjangi) {
-      message += `━━━━━━━━━━━━━━━━━━━━━\n💰 *GROUP NJANGI STATUS*\n━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      groups.forEach((group, gIdx) => {
-        const beneficiary = getBeneficiary(gIdx, meetingIdx);
-        const stats = getGroupMeetingStats(meetingIdx, gIdx);
-        message += `*${group.name}*\n⭐ Beneficiary: ${beneficiary.name}\n✅ Paid: ${stats.njangiPaid}/${stats.njangiTotal - 1}\n💵 Collected: $${stats.njangiCollected.toLocaleString()}\n\n`;
+  const generateMessage = (type) => {
+    const meeting = meetings[selectedMeeting];
+    let msg = `🌴 *NIKOM NI MANKON* 🌴\n📅 *${meeting.full}*\n🏠 Host: ${meeting.host}\n📍 ${meeting.city}\n\n`;
+    
+    if (type === 'summary') {
+      msg += `💰 *PAYMENT STATUS*\n\n`;
+      groups.forEach((g, gIdx) => {
+        const ben = getBeneficiary(gIdx, selectedMeeting);
+        const stats = getGroupMeetingStats(selectedMeeting, gIdx);
+        msg += `*${g.name}*\n⭐ ${ben.name}\n✅ ${stats.njangiPaid}/${stats.njangiTotal-1} paid ($${stats.njangiCollected.toLocaleString()})\n\n`;
       });
+    } else {
+      msg += `💵 *CONTRIBUTIONS*\n• $1,000 Njangi\n• $100 Savings\n• $20 Host Fee\n\n⭐ *BENEFICIARIES*\n`;
+      groups.forEach((g, gIdx) => { msg += `• ${g.name}: ${getBeneficiary(gIdx, selectedMeeting).name}\n`; });
     }
-    if (options.includeHostFee) message += `🍽️ *HOST FEE:* ${hStats.paid}/${hStats.total} paid ($${hStats.collected})\n`;
-    if (options.includeSavings) message += `🏦 *SAVINGS:* ${sStats.paid}/${sStats.total} paid ($${sStats.collected})\n`;
-    if (options.includeNotes && meetingNotes[meetingIdx]) message += `\n📝 *NOTES:* ${meetingNotes[meetingIdx]}\n`;
-    message += `\n🌿 _Growing together in fertile ground!_ 🌿`;
-    return message;
+    msg += `\n🌿 _Growing together!_ 🌿\n\n_Powered by TA-TECHSOLUTIONS_\n📞 (571) 447-2698`;
+    return msg;
   };
 
-  const generateReminder = (meetingIdx, options = whatsAppOptions) => {
-    const meeting = meetings[meetingIdx];
-    let message = `🌴 *NIKOM NI MANKON REMINDER* 🌴\n\n📅 *Next Meeting: ${meeting.full}*\n🏠 Host: ${meeting.host}\n📍 ${meeting.city}\n⏰ Time: 3pm - 6pm\n\n💰 *CONTRIBUTIONS:*\n`;
-    if (options.includeNjangi) message += `• $1,000 to your group's beneficiary\n`;
-    if (options.includeSavings) message += `• $100 to savings fund\n`;
-    if (options.includeHostFee) message += `• $20 to host for food\n`;
-    if (options.includeNjangi) {
-      message += `\n⭐ *BENEFICIARIES:*\n`;
-      groups.forEach((group, gIdx) => {
-        const beneficiary = getBeneficiary(gIdx, meetingIdx);
-        message += `• ${group.name}: ${beneficiary.name}\n`;
-      });
-    }
-    message += `\n🌿 _See you there!_ 🌿`;
-    return message;
-  };
-
-  const openWhatsAppWithOptions = (type) => {
-    if (isAdmin) { setPendingWhatsAppType(type); setShowWhatsAppOptionsModal(true); }
-    else {
-      let message = type === 'summary' ? generateMeetingSummary(selectedMeeting) : generateReminder(selectedMeeting);
-      setWhatsAppMessage(message); setShowWhatsAppModal(true);
-    }
-  };
-
-  const confirmWhatsAppOptions = () => {
-    let message = pendingWhatsAppType === 'summary' ? generateMeetingSummary(selectedMeeting, whatsAppOptions) : generateReminder(selectedMeeting, whatsAppOptions);
-    setWhatsAppMessage(message); setShowWhatsAppOptionsModal(false); setShowWhatsAppModal(true);
-  };
-
+  const openWhatsApp = (type) => { setWhatsAppMessage(generateMessage(type)); setShowWhatsAppModal(true); };
   const copyToClipboard = () => { navigator.clipboard.writeText(whatsAppMessage); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const shareToWhatsApp = () => { window.open(`https://wa.me/?text=${encodeURIComponent(whatsAppMessage)}`, '_blank'); };
 
   // =====================================================
   // UI HELPERS
   // =====================================================
-  const triggerConfetti = () => { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2000); };
+  const triggerConfetti = () => { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); };
 
   const canViewTab = (tabId) => {
     if (isAdmin) return true;
@@ -447,6 +752,7 @@ export default function NikomNiMankon() {
 
   const visibleTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'checkin', label: 'Check-In', icon: '📢' },
     { id: 'njangi', label: 'Njangi', icon: '💰' },
     { id: 'savings', label: 'Savings', icon: '🏦' },
     { id: 'hostfee', label: 'Host Fee', icon: '🍽️' },
@@ -457,17 +763,20 @@ export default function NikomNiMankon() {
     { id: 'rules', label: 'Rules', icon: '📜' }
   ].filter(tab => canViewTab(tab.id));
 
-  // Confetti Component
-  const Confetti = () => (<div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">{[...Array(30)].map((_, i) => (<div key={i} className="absolute text-2xl" style={{ left: `${Math.random() * 100}%`, top: `-30px`, animation: `fall ${2 + Math.random()}s linear forwards`, animationDelay: `${Math.random() * 0.5}s` }}>{['🌴', '💰', '🌿', '🎉', '✨'][Math.floor(Math.random() * 5)]}</div>))}<style>{`@keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }`}</style></div>);
-
   // Loading Screen
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-teal-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 flex items-center justify-center">
         <div className="text-center">
-          <RaffiaPalmSVG className="w-24 h-40 mx-auto animate-pulse" />
-          <h1 className="text-2xl font-bold text-emerald-700 mt-4">Nikom Ni Mankon</h1>
-          <p className="text-emerald-600">Loading...</p>
+          <div className="relative">
+            <RaffiaPalmSVG className="w-32 h-48 mx-auto animate-pulse" />
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-20 h-4 bg-black/20 rounded-full blur-md"></div>
+          </div>
+          <h1 className="text-3xl font-bold text-white mt-6 tracking-wide">NIKOM NI MANKON</h1>
+          <p className="text-emerald-300 mt-2">Loading your community...</p>
+          <div className="mt-6 flex justify-center gap-1">
+            {[0,1,2].map(i => <div key={i} className="w-3 h-3 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay: `${i * 0.15}s`}}/>)}
+          </div>
         </div>
       </div>
     );
@@ -477,284 +786,438 @@ export default function NikomNiMankon() {
   // MAIN RENDER
   // =====================================================
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-green-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50">
+      <style>{`
+        .glass { backdrop-filter: blur(12px); background: rgba(255,255,255,0.8); }
+        .gradient-border { border: 2px solid transparent; background: linear-gradient(white, white) padding-box, linear-gradient(135deg, #10B981, #0D9488) border-box; }
+        .shine { background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%); background-size: 200% 100%; animation: shine 2s infinite; }
+        @keyframes shine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .float { animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+      `}</style>
+      
       {showConfetti && <Confetti />}
+      <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handlePhotoUpload} />
 
       {/* Login Modal */}
       {showLoginModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">🔐 Admin Login</h3>
-            <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} placeholder="Password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
-            {loginError && <p className="text-red-500 text-sm mb-2">{loginError}</p>}
-            <div className="flex gap-2 mt-4">
-              <button onClick={handleLogin} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold">Login</button>
-              <button onClick={() => { setShowLoginModal(false); setPasswordInput(''); setLoginError(''); }} className="px-6 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl">Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Change Password Modal */}
-      {showChangePasswordModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">🔑 Change Password</h3>
-            <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="Current password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-2" />
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-2" />
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-2" />
-            {loginError && <p className="text-red-500 text-sm mb-2">{loginError}</p>}
-            <div className="flex gap-2 mt-4">
-              <button onClick={handleChangePassword} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold">Save</button>
-              <button onClick={() => { setShowChangePasswordModal(false); setPasswordInput(''); setNewPassword(''); setConfirmPassword(''); setLoginError(''); }} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl">Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">⚙️ Settings</h3>
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <h4 className="font-bold text-gray-700 mb-3">🔐 Password</h4>
-                <button onClick={() => { setShowSettingsModal(false); setShowChangePasswordModal(true); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">🔑 Change Password</button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-8 w-full max-w-sm" gradient>
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-3xl">🔐</span>
               </div>
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <h4 className="font-bold text-gray-700 mb-3">👁️ Tab Visibility</h4>
-                <div className="space-y-2">
-                  {[{key: 'njangi', label: 'Group Njangi', icon: '💰'}, {key: 'savings', label: 'Savings Fund', icon: '🏦'}, {key: 'hostFee', label: 'Host/Food Fee', icon: '🍽️'}].map(item => (
-                    <label key={item.key} className="flex items-center justify-between p-2 bg-white rounded-lg cursor-pointer">
-                      <span>{item.icon} {item.label}</span>
-                      <input type="checkbox" checked={visibility[item.key]} onChange={(e) => setVisibility({...visibility, [item.key]: e.target.checked})} className="w-5 h-5" />
-                    </label>
-                  ))}
+              <h3 className="text-2xl font-bold text-gray-800">Admin Login</h3>
+              <p className="text-gray-500 text-sm mt-1">Enter your password to continue</p>
+            </div>
+            <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} placeholder="Password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-3 transition-all" />
+            {loginError && <p className="text-red-500 text-sm mb-3 text-center">{loginError}</p>}
+            <button onClick={handleLogin} className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all">Login</button>
+            <button onClick={() => { setShowLoginModal(false); setPasswordInput(''); setLoginError(''); }} className="w-full mt-3 text-gray-500 hover:text-gray-700 py-2 transition-all">Cancel</button>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Member Details Modal */}
+      {showMemberModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-md" gradient>
+            <div className="text-center mb-6">
+              <div className="relative inline-block">
+                <MemberAvatar 
+                  name={groups[selectedMember.groupIdx]?.members[selectedMember.memberIdx] || ''} 
+                  photo={getMemberPhoto(selectedMember.groupIdx, selectedMember.memberIdx)}
+                  size="xl"
+                  color={groups[selectedMember.groupIdx]?.color}
+                />
+                {isAdmin && (
+                  <button onClick={() => fileInputRef.current?.click()} className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110">
+                    📷
+                  </button>
+                )}
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mt-4">{groups[selectedMember.groupIdx]?.members[selectedMember.memberIdx]}</h3>
+              <p className="text-sm text-gray-500" style={{ color: groups[selectedMember.groupIdx]?.color }}>{groups[selectedMember.groupIdx]?.name}</p>
+            </div>
+            
+            {isAdmin && (
+              <div className="space-y-3 mb-4">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">📞 Phone</label>
+                  <input type="tel" value={getMemberContact(selectedMember.groupIdx, selectedMember.memberIdx).phone || ''} onChange={(e) => updateMemberContact('phone', e.target.value)} placeholder="Phone number" className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">📧 Email</label>
+                  <input type="email" value={getMemberContact(selectedMember.groupIdx, selectedMember.memberIdx).email || ''} onChange={(e) => updateMemberContact('email', e.target.value)} placeholder="Email address" className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm" />
                 </div>
               </div>
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <h4 className="font-bold text-gray-700 mb-3">📊 Reports</h4>
-                <button onClick={() => { setShowSettingsModal(false); setShowReportModal(true); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium mr-2">🖨️ Print Report</button>
-                <button onClick={() => { setShowSettingsModal(false); setShowChartsModal(true); }} className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium">📈 Charts</button>
+            )}
+
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="bg-emerald-50 rounded-lg p-2 text-center">
+                <p className="text-lg font-bold text-emerald-600">{Object.keys(njangiPayments).filter(k => k.includes(`-${selectedMember.groupIdx}-${selectedMember.memberIdx}`) && njangiPayments[k]).length}</p>
+                <p className="text-xs text-gray-500">Njangi</p>
+              </div>
+              <div className="bg-teal-50 rounded-lg p-2 text-center">
+                <p className="text-lg font-bold text-teal-600">{Object.keys(hostFeePayments).filter(k => k.includes(`-${selectedMember.groupIdx}-${selectedMember.memberIdx}`) && hostFeePayments[k]).length}</p>
+                <p className="text-xs text-gray-500">Host Fee</p>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-2 text-center">
+                <p className="text-lg font-bold text-blue-600">{Object.keys(attendance).filter(k => k.includes(`-${selectedMember.groupIdx}-${selectedMember.memberIdx}`) && attendance[k]).length}</p>
+                <p className="text-xs text-gray-500">Attendance</p>
               </div>
             </div>
-            <button onClick={() => setShowSettingsModal(false)} className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium">Close</button>
-          </div>
-        </div>
-      )}
 
-      {/* WhatsApp Options Modal */}
-      {showWhatsAppOptionsModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">📱 Message Options</h3>
-            <div className="space-y-3">
-              {[{key: 'includeNjangi', label: 'Njangi Status', icon: '💰'}, {key: 'includeSavings', label: 'Savings Status', icon: '🏦'}, {key: 'includeHostFee', label: 'Host Fee Status', icon: '🍽️'}, {key: 'includeNotes', label: 'Meeting Notes', icon: '📝'}].map(item => (
-                <label key={item.key} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer">
-                  <span>{item.icon} {item.label}</span>
-                  <input type="checkbox" checked={whatsAppOptions[item.key]} onChange={(e) => setWhatsAppOptions({...whatsAppOptions, [item.key]: e.target.checked})} className="w-5 h-5" />
-                </label>
-              ))}
-            </div>
-            <div className="flex gap-2 mt-6">
-              <button onClick={confirmWhatsAppOptions} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold">📱 Generate</button>
-              <button onClick={() => setShowWhatsAppOptionsModal(false)} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl">Cancel</button>
-            </div>
-          </div>
+            <button onClick={() => setShowMemberModal(false)} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
+          </GlassCard>
         </div>
       )}
 
       {/* WhatsApp Modal */}
       {showWhatsAppModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[80vh] flex flex-col">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">📱 Share to WhatsApp</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-lg max-h-[80vh] flex flex-col" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">📱 Share to WhatsApp</h3>
             <div className="flex-1 overflow-auto mb-4">
-              <pre className="bg-gray-100 p-4 rounded-xl text-sm whitespace-pre-wrap">{whatsAppMessage}</pre>
+              <pre className="bg-gray-100 p-4 rounded-xl text-sm whitespace-pre-wrap font-sans">{whatsAppMessage}</pre>
             </div>
             <div className="flex gap-2">
-              <button onClick={copyToClipboard} className={`flex-1 py-3 rounded-xl font-bold ${copied ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}>{copied ? '✓ Copied!' : '📋 Copy'}</button>
-              <button onClick={shareToWhatsApp} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold">Open WhatsApp</button>
+              <button onClick={copyToClipboard} className={`flex-1 py-3 rounded-xl font-bold transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>{copied ? '✓ Copied!' : '📋 Copy'}</button>
+              <button onClick={shareToWhatsApp} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold transition-all shadow-lg">📱 Open WhatsApp</button>
             </div>
-            <button onClick={() => setShowWhatsAppModal(false)} className="mt-2 text-gray-500 text-sm">Close</button>
-          </div>
+            <button onClick={() => setShowWhatsAppModal(false)} className="mt-3 text-gray-500 hover:text-gray-700 text-sm">Close</button>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-6">⚙️ Settings</h3>
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl">
+                <h4 className="font-bold text-gray-700 mb-3">🔐 Security</h4>
+                <button onClick={() => { setShowSettingsModal(false); setShowChangePasswordModal(true); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">🔑 Change Password</button>
+              </div>
+              <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-xl">
+                <h4 className="font-bold text-gray-700 mb-3">👁️ Non-Admin Visibility</h4>
+                <div className="space-y-2">
+                  {[{key: 'njangi', label: 'Njangi Payments', icon: '💰'}, {key: 'savings', label: 'Savings Fund', icon: '🏦'}, {key: 'hostFee', label: 'Host Fee', icon: '🍽️'}].map(item => (
+                    <label key={item.key} className="flex items-center justify-between p-3 bg-white rounded-lg cursor-pointer hover:shadow-md transition-all">
+                      <span className="flex items-center gap-2"><span>{item.icon}</span> {item.label}</span>
+                      <div className={`w-12 h-6 rounded-full p-1 transition-all ${visibility[item.key] ? 'bg-emerald-500' : 'bg-gray-300'}`} onClick={() => setVisibility({...visibility, [item.key]: !visibility[item.key]})}>
+                        <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-all ${visibility[item.key] ? 'translate-x-6' : ''}`}/>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <button onClick={() => setShowSettingsModal(false)} className="w-full mt-6 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
+          </GlassCard>
         </div>
       )}
 
       {/* Beneficiary Modal */}
       {showBeneficiaryModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-md max-h-[80vh] flex flex-col" gradient>
             <h3 className="text-xl font-bold text-gray-800 mb-2">🔄 Change Beneficiary</h3>
-            <p className="text-gray-600 text-sm mb-4">{meetings[editingBeneficiary.meetingIdx]?.full} - {groups[editingBeneficiary.groupIdx]?.name}</p>
+            <p className="text-gray-500 text-sm mb-4">{meetings[editingBeneficiary.meetingIdx]?.full}</p>
             <div className="flex-1 overflow-y-auto space-y-2 mb-4">
               {groups[editingBeneficiary.groupIdx]?.members.map((member, idx) => {
                 const currentBen = getBeneficiary(editingBeneficiary.groupIdx, editingBeneficiary.meetingIdx);
                 const isCurrent = idx === currentBen.index;
                 return (
-                  <button key={idx} onClick={() => saveBeneficiaryOverride(idx)} className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between ${isCurrent ? 'bg-yellow-100 border-2 border-yellow-400' : 'bg-gray-50 hover:bg-emerald-50'}`}>
-                    <span>{member}</span>
-                    {isCurrent && <span className="text-yellow-600 font-bold">⭐ Current</span>}
+                  <button key={idx} onClick={() => saveBeneficiaryOverride(idx)} className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between transition-all ${isCurrent ? 'bg-gradient-to-r from-yellow-100 to-amber-100 border-2 border-yellow-400' : 'bg-gray-50 hover:bg-emerald-50 hover:shadow-md'}`}>
+                    <div className="flex items-center gap-3">
+                      <MemberAvatar name={member} photo={getMemberPhoto(editingBeneficiary.groupIdx, idx)} size="sm" color={groups[editingBeneficiary.groupIdx]?.color} />
+                      <span className="font-medium">{member}</span>
+                    </div>
+                    {isCurrent && <span className="text-yellow-600 font-bold">⭐</span>}
                   </button>
                 );
               })}
             </div>
             <div className="flex gap-2">
               {beneficiaryOverrides[`${editingBeneficiary.meetingIdx}-${editingBeneficiary.groupIdx}`] !== undefined && (
-                <button onClick={clearBeneficiaryOverride} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold">↩️ Reset</button>
+                <button onClick={clearBeneficiaryOverride} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold transition-all">↩️ Reset</button>
               )}
-              <button onClick={() => setShowBeneficiaryModal(false)} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl">Cancel</button>
+              <button onClick={() => setShowBeneficiaryModal(false)} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Cancel</button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Notes Modal */}
-      {showNotesModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">📝 Meeting Notes</h3>
-            <p className="text-gray-600 text-sm mb-4">{meetings[editingNotes.meetingIdx]?.full}</p>
-            <textarea value={editingNotes.note} onChange={(e) => setEditingNotes({ ...editingNotes, note: e.target.value })} placeholder="Add notes..." rows={5} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4" />
-            <div className="flex gap-2">
-              <button onClick={saveMeetingNotes} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold">💾 Save</button>
-              <button onClick={() => setShowNotesModal(false)} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl">Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Member Modal */}
-      {showEditMemberModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">✏️ Edit Member</h3>
-            <input type="text" value={editingMember.name} onChange={(e) => setEditingMember({ ...editingMember, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4" />
-            <div className="flex gap-2">
-              <button onClick={saveMemberName} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold">💾 Save</button>
-              <button onClick={() => setShowEditMemberModal(false)} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl">Cancel</button>
-            </div>
-          </div>
+          </GlassCard>
         </div>
       )}
 
       {/* Add Member Modal */}
       {showAddMemberModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">➕ Add Member</h3>
-            <input type="text" value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} placeholder="Member name" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-3" />
-            <select value={newMemberGroup} onChange={(e) => setNewMemberGroup(parseInt(e.target.value))} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4">
-              {groups.map((g, i) => <option key={i} value={i}>{g.name}</option>)}
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-md" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">➕ Add New Member</h3>
+            <input type="text" value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} placeholder="Member name" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-3" />
+            <select value={newMemberGroup} onChange={(e) => setNewMemberGroup(parseInt(e.target.value))} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-4">
+              {groups.map((g, i) => <option key={i} value={i}>{g.name} ({g.members.length} members)</option>)}
             </select>
             <div className="flex gap-2">
-              <button onClick={addNewMember} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold">➕ Add</button>
-              <button onClick={() => { setShowAddMemberModal(false); setNewMemberName(''); }} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl">Cancel</button>
+              <button onClick={addNewMember} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-3 rounded-xl font-bold shadow-lg transition-all">➕ Add Member</button>
+              <button onClick={() => { setShowAddMemberModal(false); setNewMemberName(''); }} className="px-6 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Cancel</button>
             </div>
-          </div>
+          </GlassCard>
         </div>
       )}
 
-      {/* Charts Modal */}
-      {showChartsModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Charts</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {groups.map((g, gIdx) => {
-                let total = 0;
-                meetings.forEach((_, mIdx) => {
-                  g.members.forEach((_, memberIdx) => {
-                    if (njangiPayments[`${mIdx}-${gIdx}-${memberIdx}`]) total += 1000;
-                  });
-                });
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-md" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">🔑 Change Password</h3>
+            <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="Current password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none mb-2" />
+            {loginError && <p className="text-red-500 text-sm mb-2">{loginError}</p>}
+            <div className="flex gap-2 mt-4">
+              <button onClick={handleChangePassword} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-xl font-bold transition-all">Save</button>
+              <button onClick={() => { setShowChangePasswordModal(false); setPasswordInput(''); setNewPassword(''); setConfirmPassword(''); setLoginError(''); }} className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl transition-all">Cancel</button>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Check-In Status Modal */}
+      {showCheckinModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-md" gradient>
+            <div className="text-center mb-4">
+              <MemberAvatar 
+                name={groups[checkinMember.groupIdx]?.members[checkinMember.memberIdx] || ''} 
+                photo={getMemberPhoto(checkinMember.groupIdx, checkinMember.memberIdx)}
+                size="lg"
+                color={groups[checkinMember.groupIdx]?.color}
+              />
+              <h3 className="text-xl font-bold text-gray-800 mt-3">{groups[checkinMember.groupIdx]?.members[checkinMember.memberIdx]}</h3>
+              <p className="text-gray-500 text-sm">Update status for {meetings[selectedMeeting]?.date}</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {STATUS_OPTIONS.map((status) => {
+                const currentStatus = getMemberStatus(selectedMeeting, checkinMember.groupIdx, checkinMember.memberIdx);
+                const isSelected = currentStatus === status.id;
                 return (
-                  <div key={gIdx} className="bg-gray-50 p-4 rounded-xl">
-                    <p className="font-bold" style={{ color: g.color }}>{g.name}</p>
-                    <p className="text-2xl font-bold text-gray-800">${total.toLocaleString()}</p>
-                    <div className="bg-gray-200 h-3 rounded-full mt-2">
-                      <div className="h-full rounded-full" style={{ width: `${Math.min((total / (g.members.length * 12 * 1000)) * 100, 100)}%`, backgroundColor: g.color }} />
-                    </div>
-                  </div>
+                  <button
+                    key={status.id}
+                    onClick={() => updateMemberStatus(status.id)}
+                    className={`p-3 rounded-xl text-sm font-medium transition-all hover:scale-105 flex items-center gap-2 justify-center ${isSelected ? 'ring-2 ring-offset-2 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                    style={isSelected ? { backgroundColor: status.color, ringColor: status.color } : {}}
+                  >
+                    <span className="text-lg">{status.icon}</span>
+                    <span>{status.label}</span>
+                  </button>
                 );
               })}
             </div>
-            <button onClick={() => setShowChartsModal(false)} className="w-full mt-4 bg-gray-200 text-gray-700 py-3 rounded-xl">Close</button>
-          </div>
+
+            <div className="mb-4">
+              <label className="text-xs text-gray-500 mb-1 block">💬 Add a message (optional)</label>
+              <input 
+                type="text" 
+                value={checkinMessage} 
+                onChange={(e) => setCheckinMessage(e.target.value)} 
+                placeholder="e.g., Stuck in traffic, ETA 15 mins"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              {getMemberStatus(selectedMeeting, checkinMember.groupIdx, checkinMember.memberIdx) && (
+                <button onClick={clearMemberStatus} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold transition-all">Clear</button>
+              )}
+              <button onClick={() => { setShowCheckinModal(false); setCheckinMessage(''); }} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Cancel</button>
+            </div>
+          </GlassCard>
         </div>
       )}
 
-      {/* Report Modal */}
-      {showReportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-4xl shadow-2xl max-h-[90vh] flex flex-col">
-            <div className="flex justify-between mb-4">
-              <h3 className="text-xl font-bold">🖨️ Report</h3>
-              <div className="flex gap-2">
-                <button onClick={() => window.print()} className="bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold">🖨️ Print</button>
-                <button onClick={() => setShowReportModal(false)} className="bg-gray-200 px-4 py-2 rounded-lg">Close</button>
+      {/* Carpool Modal */}
+      {showCarpoolModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <GlassCard className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" gradient>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">🚗 Carpool Coordination</h3>
+            <p className="text-gray-500 text-sm mb-4">{meetings[selectedMeeting]?.full}</p>
+            
+            {/* Current Offers & Requests */}
+            {(() => {
+              const { offers, requests } = getCarpoolMatches(selectedMeeting);
+              return (
+                <div className="mb-6">
+                  {offers.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm font-bold text-green-600 mb-2">🚗 Available Rides ({offers.length})</p>
+                      {offers.map((offer, idx) => {
+                        const area = CARPOOL_AREAS.find(a => a.id === offer.area);
+                        return (
+                          <div key={idx} className="flex items-center gap-2 p-3 bg-green-50 rounded-xl border border-green-200 mb-2">
+                            <MemberAvatar name={offer.member} photo={getMemberPhoto(offer.groupIdx, offer.memberIdx)} size="sm" color={offer.groupColor} />
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-800 text-sm">{offer.member}</p>
+                              <p className="text-xs text-gray-500">{area?.icon} From {area?.name} • {offer.seats} seats available</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {requests.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm font-bold text-blue-600 mb-2">🙋 Need a Ride ({requests.length})</p>
+                      {requests.map((req, idx) => {
+                        const area = CARPOOL_AREAS.find(a => a.id === req.area);
+                        return (
+                          <div key={idx} className="flex items-center gap-2 p-3 bg-blue-50 rounded-xl border border-blue-200 mb-2">
+                            <MemberAvatar name={req.member} photo={getMemberPhoto(req.groupIdx, req.memberIdx)} size="sm" color={req.groupColor} />
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-800 text-sm">{req.member}</p>
+                              <p className="text-xs text-gray-500">{area?.icon} From {area?.name}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {offers.length === 0 && requests.length === 0 && (
+                    <div className="text-center py-6 text-gray-500">
+                      <p className="text-3xl mb-2">🚗</p>
+                      <p>No carpool offers or requests yet.</p>
+                      <p className="text-sm">Be the first to offer or request a ride!</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+            
+            {/* Add Carpool Offer/Request */}
+            <div className="border-t pt-4">
+              <p className="text-sm font-bold text-gray-700 mb-3">Add Your Carpool Status</p>
+              
+              <div className="mb-3">
+                <label className="text-xs text-gray-500 mb-1 block">Select Member</label>
+                <select 
+                  onChange={(e) => {
+                    const [gIdx, mIdx] = e.target.value.split('-').map(Number);
+                    setCheckinMember({ groupIdx: gIdx, memberIdx: mIdx });
+                  }}
+                  className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none text-sm"
+                >
+                  <option value="">Choose member...</option>
+                  {groups.map((g, gIdx) => g.members.map((m, mIdx) => (
+                    <option key={`${gIdx}-${mIdx}`} value={`${gIdx}-${mIdx}`}>{m} ({g.name})</option>
+                  )))}
+                </select>
+              </div>
+              
+              <div className="mb-3">
+                <label className="text-xs text-gray-500 mb-1 block">Your Area</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {CARPOOL_AREAS.slice(0, 9).map((area) => (
+                    <button
+                      key={area.id}
+                      onClick={() => setSelectedLocationMember(area.id)}
+                      className={`p-2 rounded-xl text-xs font-medium transition-all ${selectedLocationMember === area.id ? 'bg-blue-500 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                    >
+                      {area.icon} {area.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    if (checkinMember && selectedLocationMember) {
+                      offerCarpool(checkinMember.groupIdx, checkinMember.memberIdx, selectedLocationMember, 3);
+                      setShowCarpoolModal(false);
+                    }
+                  }}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 rounded-xl font-bold transition-all"
+                >
+                  🚗 Offer Ride
+                </button>
+                <button
+                  onClick={() => {
+                    if (checkinMember && selectedLocationMember) {
+                      requestCarpool(checkinMember.groupIdx, checkinMember.memberIdx, selectedLocationMember);
+                      setShowCarpoolModal(false);
+                    }
+                  }}
+                  className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-3 rounded-xl font-bold transition-all"
+                >
+                  🙋 Need Ride
+                </button>
               </div>
             </div>
-            <div className="flex-1 overflow-auto" ref={reportRef}>
-              <h1 className="text-center text-2xl font-bold text-emerald-600">🌴 NIKOM NI MANKON 🌴</h1>
-              <p className="text-center text-gray-600">Report Generated: {new Date().toLocaleString()}</p>
-              <div className="mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-xl">
-                <p className="font-bold text-red-600">🔒 CONFIDENTIAL - Total Savings: ${overallStats.totalSavingsCollected.toLocaleString()}</p>
-              </div>
-              <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-                <div className="bg-emerald-100 p-4 rounded-xl"><p className="text-sm text-gray-600">Njangi</p><p className="text-xl font-bold text-emerald-600">${overallStats.totalNjangiCollected.toLocaleString()}</p></div>
-                <div className="bg-teal-100 p-4 rounded-xl"><p className="text-sm text-gray-600">Host Fees</p><p className="text-xl font-bold text-teal-600">${overallStats.totalHostFeeCollected.toLocaleString()}</p></div>
-                <div className="bg-blue-100 p-4 rounded-xl"><p className="text-sm text-gray-600">Total</p><p className="text-xl font-bold text-blue-600">${overallStats.totalCollected.toLocaleString()}</p></div>
-              </div>
-            </div>
-          </div>
+            
+            <button onClick={() => setShowCarpoolModal(false)} className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all">Close</button>
+          </GlassCard>
         </div>
       )}
 
       {/* Header */}
       <header className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-green-600 to-teal-700" />
-        <div className="absolute left-4 bottom-0 opacity-30"><RaffiaPalmSVG className="w-16 h-28" /></div>
-        <div className="absolute right-4 bottom-0 opacity-30" style={{ transform: 'scaleX(-1)' }}><RaffiaPalmSVG className="w-16 h-28" /></div>
-        <div className="relative max-w-7xl mx-auto px-4 py-5">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-800 via-green-700 to-teal-800" />
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.4"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
+        <div className="absolute left-2 md:left-8 bottom-0 opacity-40"><RaffiaPalmSVG className="w-16 h-28 md:w-24 md:h-40" /></div>
+        <div className="absolute right-2 md:right-8 bottom-0 opacity-40" style={{ transform: 'scaleX(-1)' }}><RaffiaPalmSVG className="w-16 h-28 md:w-24 md:h-40" /></div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 py-6 md:py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                <RaffiaPalmSVG className="w-12 h-20" />
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-2xl border border-white/30 float">
+                <RaffiaPalmSVG className="w-12 h-20 md:w-16 md:h-24" />
               </div>
               <div className="text-white">
-                <h1 className="text-2xl md:text-3xl font-bold">NIKOM NI MANKON</h1>
-                <p className="text-emerald-200 text-sm">🌿 The Fertile Raffia Groves of Asonka</p>
+                <h1 className="text-2xl md:text-4xl font-bold tracking-tight">NIKOM NI MANKON</h1>
+                <p className="text-emerald-200 text-sm md:text-base flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                  The Fertile Raffia Groves of Asonka
+                </p>
               </div>
             </div>
+            
             <div className="flex items-center gap-3 flex-wrap justify-center">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${isOnline ? 'bg-green-400 text-green-900' : 'bg-yellow-400 text-yellow-900'}`}>
-                {isOnline ? '🟢 Online' : '🟡 Offline'}
-              </span>
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/20">
+                <PulsingDot color={isOnline ? '#10B981' : '#F59E0B'} />
+                <span className="text-white text-sm">{isOnline ? 'Online' : 'Offline'}</span>
+              </div>
               {isAdmin ? (
                 <div className="flex items-center gap-2">
-                  <span className="bg-green-400 text-green-900 px-3 py-1 rounded-full text-sm font-bold">🔓 Admin</span>
-                  <button onClick={() => setShowSettingsModal(true)} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-full text-sm">⚙️</button>
-                  <button onClick={handleLogout} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-full text-sm">Logout</button>
+                  <span className="bg-gradient-to-r from-green-400 to-emerald-500 text-green-900 px-4 py-1.5 rounded-full text-sm font-bold shadow-lg">🔓 Admin</span>
+                  <button onClick={() => setShowSettingsModal(true)} className="w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all hover:scale-110 border border-white/20">⚙️</button>
+                  <button onClick={handleLogout} className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm transition-all border border-white/20">Logout</button>
                 </div>
               ) : (
-                <button onClick={() => setShowLoginModal(true)} className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full text-sm font-medium">🔐 Admin Login</button>
+                <button onClick={() => setShowLoginModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-5 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 border border-white/20 shadow-lg">🔐 Admin Login</button>
               )}
-              <button onClick={() => openWhatsAppWithOptions('reminder')} className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-medium">📱 Share</button>
+              <button onClick={() => openWhatsApp('reminder')} className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-5 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 shadow-lg">📱 Share</button>
             </div>
           </div>
         </div>
-        {!isAdmin && <div className="bg-yellow-400 text-yellow-900 text-center py-2 text-sm font-medium">👀 View-Only Mode</div>}
+        
+        {!isAdmin && (
+          <div className="bg-gradient-to-r from-yellow-400 to-amber-400 text-yellow-900 text-center py-2 text-sm font-medium">
+            👀 View-Only Mode — <button onClick={() => setShowLoginModal(true)} className="underline font-bold hover:text-yellow-800">Login</button> to make changes
+          </div>
+        )}
       </header>
 
       {/* Navigation */}
-      <nav className="bg-white shadow-lg sticky top-0 z-40 border-b-4 border-emerald-500">
+      <nav className="glass sticky top-0 z-40 shadow-lg border-b border-emerald-200">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex gap-1 overflow-x-auto py-2">
+          <div className="flex gap-1 overflow-x-auto py-3 scrollbar-hide">
             {visibleTabs.map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium whitespace-nowrap text-sm ${activeTab === tab.id ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg' : 'text-gray-600 hover:bg-emerald-50'}`}>
-                <span>{tab.icon}</span>
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium whitespace-nowrap text-sm transition-all ${activeTab === tab.id ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg scale-105' : 'text-gray-600 hover:bg-emerald-50 hover:text-emerald-700'}`}>
+                <span className="text-lg">{tab.icon}</span>
                 <span className="hidden sm:inline">{tab.label}</span>
               </button>
             ))}
@@ -768,114 +1231,523 @@ export default function NikomNiMankon() {
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
             {isAdmin && (
-              <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl p-4 text-white">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div><h3 className="font-bold">⚙️ Admin Panel</h3><p className="text-purple-200 text-sm">Quick actions</p></div>
+              <div className="bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
+                <div className="relative flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <h3 className="font-bold text-lg flex items-center gap-2">⚡ Admin Panel</h3>
+                    <p className="text-purple-200 text-sm">Manage your community</p>
+                  </div>
                   <div className="flex gap-2 flex-wrap">
-                    <button onClick={() => setShowSettingsModal(true)} className="bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg text-sm">⚙️ Settings</button>
-                    <button onClick={() => setShowAddMemberModal(true)} className="bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg text-sm">➕ Add Member</button>
-                    <button onClick={() => setShowChartsModal(true)} className="bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg text-sm">📊 Charts</button>
+                    <button onClick={() => setShowSettingsModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105">⚙️ Settings</button>
+                    <button onClick={() => setShowAddMemberModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105">➕ Add Member</button>
                   </div>
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-4 text-white shadow-lg"><p className="text-emerald-100 text-xs">Members</p><p className="text-3xl font-bold">{totalMembers}</p></div>
-              <div className="bg-gradient-to-br from-green-500 to-teal-600 rounded-xl p-4 text-white shadow-lg"><p className="text-green-100 text-xs">Njangi</p><p className="text-2xl font-bold">${(overallStats.totalNjangiCollected/1000).toFixed(0)}k</p></div>
-              <div className="bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl p-4 text-white shadow-lg"><p className="text-teal-100 text-xs">Host Fees</p><p className="text-2xl font-bold">${overallStats.totalHostFeeCollected.toLocaleString()}</p></div>
-              {isAdmin && <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-4 text-white shadow-lg relative"><span className="absolute top-1 right-2 text-xs bg-red-500 px-1.5 py-0.5 rounded">🔒</span><p className="text-purple-100 text-xs">Savings</p><p className="text-2xl font-bold">${overallStats.totalSavingsCollected.toLocaleString()}</p></div>}
-              <div className="bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl p-4 text-white shadow-lg"><p className="text-cyan-100 text-xs">Total</p><p className="text-2xl font-bold">${(overallStats.totalCollected/1000).toFixed(1)}k</p></div>
+            
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <GlassCard className="p-5 gradient-border hover:shadow-xl transition-all hover:-translate-y-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase tracking-wide">Members</p>
+                    <p className="text-3xl font-bold text-gray-800 mt-1"><AnimatedCounter value={totalMembers} /></p>
+                  </div>
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-green-500 rounded-xl flex items-center justify-center text-2xl shadow-lg">👥</div>
+                </div>
+              </GlassCard>
+              
+              <GlassCard className="p-5 gradient-border hover:shadow-xl transition-all hover:-translate-y-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase tracking-wide">Njangi</p>
+                    <p className="text-3xl font-bold text-emerald-600 mt-1"><AnimatedCounter value={overallStats.totalNjangiCollected} prefix="$" /></p>
+                  </div>
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-teal-500 rounded-xl flex items-center justify-center text-2xl shadow-lg">💰</div>
+                </div>
+              </GlassCard>
+              
+              <GlassCard className="p-5 gradient-border hover:shadow-xl transition-all hover:-translate-y-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase tracking-wide">Host Fees</p>
+                    <p className="text-3xl font-bold text-teal-600 mt-1"><AnimatedCounter value={overallStats.totalHostFeeCollected} prefix="$" /></p>
+                  </div>
+                  <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-xl flex items-center justify-center text-2xl shadow-lg">🍽️</div>
+                </div>
+              </GlassCard>
+              
+              {isAdmin && (
+                <GlassCard className="p-5 border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50 hover:shadow-xl transition-all hover:-translate-y-1 relative">
+                  <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">🔒</div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-500 text-xs uppercase tracking-wide">Savings</p>
+                      <p className="text-3xl font-bold text-purple-600 mt-1"><AnimatedCounter value={overallStats.totalSavingsCollected} prefix="$" /></p>
+                    </div>
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-xl flex items-center justify-center text-2xl shadow-lg">🏦</div>
+                  </div>
+                </GlassCard>
+              )}
             </div>
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-500 to-green-500 p-4 text-white flex items-center justify-between flex-wrap gap-2">
-                <div><h3 className="text-lg font-bold">🗓️ Next: {meetings[0]?.full}</h3><p className="text-emerald-100 text-sm">🏠 {meetings[0]?.host} • {meetings[0]?.city}</p></div>
-                <span className="bg-white text-emerald-600 text-xs font-bold px-3 py-1 rounded-full">NEXT</span>
+
+            {/* Next Meeting Card */}
+            <GlassCard className="overflow-hidden shadow-xl">
+              <div className="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 p-5 text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+                <div className="relative flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="bg-white/20 backdrop-blur px-3 py-1 rounded-full text-xs font-bold">NEXT MEETING</span>
+                      <PulsingDot />
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-bold">🗓️ {meetings[0]?.full}</h3>
+                    <p className="text-emerald-100 text-sm mt-1">🏠 {meetings[0]?.host} • 📍 {meetings[0]?.city}</p>
+                  </div>
+                  <button onClick={() => openWhatsApp('reminder')} className="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-2 rounded-xl font-medium transition-all hover:scale-105">📱 Share</button>
+                </div>
               </div>
-              <div className="p-4">
-                <h4 className="font-bold text-gray-800 mb-3">💰 Beneficiaries:</h4>
+              <div className="p-5">
+                <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">💰 Beneficiaries <span className="text-xs text-gray-400 font-normal">(Click to change)</span></h4>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {groups.map((group, gIdx) => {
                     const beneficiary = getBeneficiary(gIdx, 0);
                     const stats = getGroupMeetingStats(0, gIdx);
                     return (
-                      <div key={gIdx} className="rounded-lg p-3 border-2" style={{ borderColor: group.color, backgroundColor: group.color + '10' }}>
-                        <p className="text-xs font-bold" style={{ color: group.color }}>{group.name}</p>
-                        <p className="font-bold text-gray-800 text-sm mt-1 truncate">{beneficiary.name}</p>
-                        <div className="mt-2 bg-gray-200 rounded-full h-2"><div className="h-full rounded-full" style={{ width: `${stats.njangiPercentage}%`, backgroundColor: group.color }}/></div>
-                        <p className="text-xs text-gray-500 mt-1">{stats.njangiPercentage}%</p>
-                        {isAdmin && <button onClick={() => { setEditingBeneficiary({ meetingIdx: 0, groupIdx: gIdx }); setShowBeneficiaryModal(true); }} className="mt-2 text-xs text-blue-600">🔄 Change</button>}
+                      <div key={gIdx} onClick={() => isAdmin && (setEditingBeneficiary({ meetingIdx: 0, groupIdx: gIdx }), setShowBeneficiaryModal(true))} className={`rounded-xl p-4 border-2 transition-all hover:shadow-lg ${isAdmin ? 'cursor-pointer hover:-translate-y-1' : ''} ${beneficiary.isOverride ? 'ring-2 ring-orange-400 ring-offset-2' : ''}`} style={{ borderColor: group.color, backgroundColor: group.color + '10' }}>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-bold" style={{ color: group.color }}>{group.name}</p>
+                          {beneficiary.isOverride && <span className="text-orange-500 text-xs">⚡</span>}
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <MemberAvatar name={beneficiary.name} photo={getMemberPhoto(gIdx, beneficiary.index)} size="sm" color={group.color} />
+                          <p className="font-bold text-gray-800 text-sm truncate flex-1">{beneficiary.name.split(' ')[0]}</p>
+                        </div>
+                        <ProgressRing progress={stats.njangiPercentage} size={50} strokeWidth={5} color={group.color} />
                       </div>
                     );
                   })}
                 </div>
               </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-lg p-4">
-              <h3 className="font-bold text-gray-800 mb-3">💵 Per Meeting: <span className="text-emerald-600">$1,120</span></h3>
-              <div className="grid grid-cols-4 gap-3 text-center">
-                <div className="bg-emerald-50 p-2 rounded-lg"><p className="text-emerald-600 font-bold">$1,000</p><p className="text-xs text-gray-600">Njangi</p></div>
-                <div className="bg-purple-50 p-2 rounded-lg"><p className="text-purple-600 font-bold">$100</p><p className="text-xs text-gray-600">Savings</p></div>
-                <div className="bg-teal-50 p-2 rounded-lg"><p className="text-teal-600 font-bold">$20</p><p className="text-xs text-gray-600">Host</p></div>
-                <div className="bg-red-50 p-2 rounded-lg"><p className="text-red-600 font-bold">$250</p><p className="text-xs text-gray-600">Late Fee</p></div>
+            </GlassCard>
+
+            {/* Fee Summary */}
+            <GlassCard className="p-5 shadow-lg">
+              <h3 className="font-bold text-gray-800 mb-4">💵 Per Meeting: <span className="text-emerald-600">$1,120</span></h3>
+              <div className="grid grid-cols-4 gap-3">
+                {[{amount: '$1,000', label: 'Njangi', color: 'emerald', icon: '💰'}, {amount: '$100', label: 'Savings', color: 'purple', icon: '🏦'}, {amount: '$20', label: 'Host Fee', color: 'teal', icon: '🍽️'}, {amount: '$250', label: 'Late Fee', color: 'red', icon: '⚠️'}].map((item, i) => (
+                  <div key={i} className={`bg-${item.color}-50 rounded-xl p-3 text-center border border-${item.color}-200 hover:shadow-md transition-all`}>
+                    <span className="text-xl">{item.icon}</span>
+                    <p className={`text-${item.color}-600 font-bold text-lg`}>{item.amount}</p>
+                    <p className="text-xs text-gray-500">{item.label}</p>
+                  </div>
+                ))}
               </div>
-            </div>
+            </GlassCard>
+          </div>
+        )}
+
+        {/* Check-In Tab */}
+        {activeTab === 'checkin' && (
+          <div className="space-y-4">
+            <GlassCard className="p-4">
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {meetings.map((m, idx) => (
+                  <button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedMeeting === idx ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg' : 'bg-gray-100 hover:bg-orange-100'}`}>
+                    {idx === 0 && <span className="mr-1">🔥</span>}{m.date}
+                  </button>
+                ))}
+              </div>
+            </GlassCard>
+
+            {/* Status Summary */}
+            {(() => {
+              const stats = getMeetingStatusStats(selectedMeeting);
+              return (
+                <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-orange-100 text-sm">{currentMeeting?.full}</p>
+                        <h2 className="text-2xl font-bold">📢 Meeting Day Check-In</h2>
+                        <p className="text-orange-200 text-sm mt-1">🏠 {currentMeeting?.host} • 📍 {currentMeeting?.city}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-4xl font-bold">{stats.arrived + stats.coming + stats.onway}</p>
+                        <p className="text-orange-100 text-sm">Expected</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-5 gap-2 mt-4">
+                      <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
+                        <p className="text-2xl font-bold">{stats.arrived}</p>
+                        <p className="text-xs">🎉 Arrived</p>
+                      </div>
+                      <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
+                        <p className="text-2xl font-bold">{stats.onway}</p>
+                        <p className="text-xs">🚗 On Way</p>
+                      </div>
+                      <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
+                        <p className="text-2xl font-bold">{stats.coming}</p>
+                        <p className="text-xs">✅ Coming</p>
+                      </div>
+                      <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
+                        <p className="text-2xl font-bold">{stats.cantmake}</p>
+                        <p className="text-xs">❌ Can't</p>
+                      </div>
+                      <div className="bg-white/20 backdrop-blur rounded-xl p-2 text-center">
+                        <p className="text-2xl font-bold">{stats.noresponse}</p>
+                        <p className="text-xs">❓ No Reply</p>
+                      </div>
+                    </div>
+                    
+                    {/* Quick Actions */}
+                    <div className="flex gap-2 mt-4 flex-wrap">
+                      {isAdmin && !notificationsEnabled && (
+                        <button onClick={requestNotificationPermission} className="bg-white/20 hover:bg-white/30 backdrop-blur px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1">
+                          🔔 Enable Notifications
+                        </button>
+                      )}
+                      {notificationsEnabled && (
+                        <span className="bg-green-500/30 px-3 py-2 rounded-xl text-sm flex items-center gap-1">
+                          <PulsingDot color="#10B981" /> Notifications On
+                        </span>
+                      )}
+                      <button onClick={() => setShowCarpoolModal(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1">
+                        🚗 Carpool ({getCarpoolMatches(selectedMeeting).offers.length} offers)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Live Updates Feed with ETA */}
+            {(() => {
+              const updates = getAllStatusUpdates(selectedMeeting);
+              return updates.length > 0 && (
+                <GlassCard className="p-4 shadow-lg">
+                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <PulsingDot color="#10B981" />
+                    Live Updates ({updates.length})
+                  </h3>
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                    {updates.map((update, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all">
+                        <MemberAvatar name={update.member} photo={getMemberPhoto(update.groupIdx, update.memberIdx)} size="sm" color={update.groupColor} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-gray-800">{update.member}</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: update.status.color }}>{update.status.icon} {update.status.label}</span>
+                            {update.eta && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">⏱️ ETA: {update.eta}</span>
+                            )}
+                            {update.location && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">📍 {update.location.distance} mi</span>
+                            )}
+                          </div>
+                          {update.message && <p className="text-sm text-gray-500 truncate">💬 {update.message}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </GlassCard>
+              );
+            })()}
+
+            {/* Carpool Section */}
+            {(() => {
+              const { offers, requests, matches } = getCarpoolMatches(selectedMeeting);
+              return (offers.length > 0 || requests.length > 0) && (
+                <GlassCard className="p-4 shadow-lg">
+                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">🚗 Carpool Board</h3>
+                  
+                  {offers.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-green-600 mb-2">🚗 Offering Rides ({offers.length})</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {offers.map((offer, idx) => {
+                          const area = CARPOOL_AREAS.find(a => a.id === offer.area);
+                          return (
+                            <div key={idx} className="flex items-center gap-2 p-3 bg-green-50 rounded-xl border border-green-200">
+                              <MemberAvatar name={offer.member} photo={getMemberPhoto(offer.groupIdx, offer.memberIdx)} size="sm" color={offer.groupColor} />
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-800 text-sm">{offer.member}</p>
+                                <p className="text-xs text-gray-500">{area?.icon} {area?.name} • {offer.seats} seats</p>
+                              </div>
+                              <a href={`tel:${getMemberContact(offer.groupIdx, offer.memberIdx)?.phone || ''}`} className="bg-green-500 text-white px-2 py-1 rounded-lg text-xs font-bold">📞 Call</a>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {requests.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-blue-600 mb-2">🙋 Need a Ride ({requests.length})</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {requests.map((req, idx) => {
+                          const area = CARPOOL_AREAS.find(a => a.id === req.area);
+                          const hasMatch = offers.some(o => o.area === req.area);
+                          return (
+                            <div key={idx} className={`flex items-center gap-2 p-3 rounded-xl border ${hasMatch ? 'bg-yellow-50 border-yellow-300' : 'bg-blue-50 border-blue-200'}`}>
+                              <MemberAvatar name={req.member} photo={getMemberPhoto(req.groupIdx, req.memberIdx)} size="sm" color={req.groupColor} />
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-800 text-sm">{req.member}</p>
+                                <p className="text-xs text-gray-500">{area?.icon} {area?.name}</p>
+                              </div>
+                              {hasMatch && <span className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded-lg text-xs font-bold">🎉 Match!</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </GlassCard>
+              );
+            })()}
+
+            {/* All Members Check-In */}
+            <GlassCard className="p-4 shadow-lg">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h3 className="font-bold text-gray-800">👥 Update Status</h3>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowCarpoolModal(true)} className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-xl text-sm font-medium transition-all">🚗 Carpool</button>
+                  <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none text-sm w-40 transition-all" />
+                </div>
+              </div>
+              <div className="space-y-3">
+                {groups.map((group, gIdx) => {
+                  const filteredMembers = group.members.filter(m => !searchTerm || m.toLowerCase().includes(searchTerm.toLowerCase()));
+                  if (filteredMembers.length === 0) return null;
+                  const statusCounts = {
+                    coming: group.members.filter((_, mIdx) => ['coming', 'almost'].includes(getMemberStatus(selectedMeeting, gIdx, mIdx))).length,
+                    onway: group.members.filter((_, mIdx) => ['onway', 'late'].includes(getMemberStatus(selectedMeeting, gIdx, mIdx))).length,
+                    arrived: group.members.filter((_, mIdx) => getMemberStatus(selectedMeeting, gIdx, mIdx) === 'arrived').length,
+                  };
+                  return (
+                    <div key={gIdx} className="rounded-xl overflow-hidden border">
+                      <div className="p-3 flex items-center justify-between" style={{ backgroundColor: group.color + '15' }}>
+                        <span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span>
+                        <div className="flex gap-1 text-xs">
+                          <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">🎉 {statusCounts.arrived}</span>
+                          <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">🚗 {statusCounts.onway}</span>
+                          <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">✅ {statusCounts.coming}</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3">
+                        {filteredMembers.map((member) => {
+                          const actualIdx = group.members.indexOf(member);
+                          const status = getMemberStatus(selectedMeeting, gIdx, actualIdx);
+                          const statusInfo = STATUS_OPTIONS.find(s => s.id === status);
+                          const message = getStatusMessage(selectedMeeting, gIdx, actualIdx);
+                          const location = getMemberLocation(gIdx, actualIdx);
+                          const carpool = getCarpoolOffer(selectedMeeting, gIdx, actualIdx) || getCarpoolRequest(selectedMeeting, gIdx, actualIdx);
+                          
+                          return (
+                            <div 
+                              key={member} 
+                              className={`p-3 rounded-xl text-sm transition-all hover:shadow-md ${status ? 'border-2' : 'bg-gray-50 hover:bg-gray-100'}`}
+                              style={status ? { borderColor: statusInfo?.color, backgroundColor: statusInfo?.color + '10' } : {}}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} />
+                                  <div className="flex-1 min-w-0">
+                                    <span className="font-medium text-gray-800 truncate block">{member}</span>
+                                    {message && <span className="text-xs text-gray-500 truncate block">💬 {message}</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Status & Location Info */}
+                              <div className="flex flex-wrap gap-1 mb-2">
+                                {status && (
+                                  <span className="px-2 py-0.5 rounded-lg text-xs font-bold text-white" style={{ backgroundColor: statusInfo?.color }}>
+                                    {statusInfo?.icon} {statusInfo?.label}
+                                  </span>
+                                )}
+                                {location && (
+                                  <span className="px-2 py-0.5 rounded-lg text-xs bg-purple-100 text-purple-700">
+                                    ⏱️ {location.eta} • {location.distance}mi
+                                  </span>
+                                )}
+                                {carpool && (
+                                  <span className="px-2 py-0.5 rounded-lg text-xs bg-blue-100 text-blue-700">
+                                    🚗 {getCarpoolOffer(selectedMeeting, gIdx, actualIdx) ? 'Offering' : 'Needs'} ride
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Action Buttons */}
+                              <div className="flex gap-1 flex-wrap">
+                                <button 
+                                  onClick={() => { setCheckinMember({ groupIdx: gIdx, memberIdx: actualIdx }); setShowCheckinModal(true); }}
+                                  className="px-2 py-1 rounded-lg text-xs font-medium bg-gray-200 hover:bg-gray-300 text-gray-700 transition-all"
+                                >
+                                  {status ? '✏️ Edit' : '📢 Status'}
+                                </button>
+                                <button 
+                                  onClick={() => shareMyLocation(gIdx, actualIdx)}
+                                  className="px-2 py-1 rounded-lg text-xs font-medium bg-purple-100 hover:bg-purple-200 text-purple-700 transition-all"
+                                >
+                                  📍 Location
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </GlassCard>
+
+            {/* Quick Share */}
+            <GlassCard className="p-4 shadow-lg">
+              <h3 className="font-bold text-gray-800 mb-3">📱 Share Status Update</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <button 
+                  onClick={() => {
+                    const stats = getMeetingStatusStats(selectedMeeting);
+                    const msg = `🌴 *NIKOM NI MANKON* 🌴\n📅 ${currentMeeting?.full}\n📍 ${currentMeeting?.host}'s place\n\n📊 *STATUS UPDATE*\n🎉 Arrived: ${stats.arrived}\n🚗 On the way: ${stats.onway}\n✅ Coming: ${stats.coming}\n❌ Can't make it: ${stats.cantmake}\n❓ No response: ${stats.noresponse}\n\n🌿 See you soon!`;
+                    setWhatsAppMessage(msg);
+                    setShowWhatsAppModal(true);
+                  }}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all hover:scale-105"
+                >
+                  📱 Share Status to WhatsApp
+                </button>
+                <button 
+                  onClick={() => {
+                    const { offers, requests } = getCarpoolMatches(selectedMeeting);
+                    let msg = `🌴 *NIKOM NI MANKON* 🌴\n📅 ${currentMeeting?.full}\n\n🚗 *CARPOOL BOARD*\n\n`;
+                    if (offers.length > 0) {
+                      msg += `*Offering Rides:*\n`;
+                      offers.forEach(o => {
+                        const area = CARPOOL_AREAS.find(a => a.id === o.area);
+                        msg += `• ${o.member} - ${area?.name} (${o.seats} seats)\n`;
+                      });
+                    }
+                    if (requests.length > 0) {
+                      msg += `\n*Need a Ride:*\n`;
+                      requests.forEach(r => {
+                        const area = CARPOOL_AREAS.find(a => a.id === r.area);
+                        msg += `• ${r.member} - ${area?.name}\n`;
+                      });
+                    }
+                    if (offers.length === 0 && requests.length === 0) {
+                      msg += `No carpool offers or requests yet.\n`;
+                    }
+                    msg += `\n🌿 Coordinate rides in the group!`;
+                    setWhatsAppMessage(msg);
+                    setShowWhatsAppModal(true);
+                  }}
+                  className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all hover:scale-105"
+                >
+                  🚗 Share Carpool Board
+                </button>
+              </div>
+            </GlassCard>
           </div>
         )}
 
         {/* Njangi Tab */}
         {activeTab === 'njangi' && (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-lg p-4 space-y-3">
-              <div><p className="text-sm font-medium text-gray-600 mb-2">📅 Meeting</p><div className="flex gap-2 overflow-x-auto pb-2">{meetings.map((m, idx) => (<button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${selectedMeeting === idx ? 'bg-emerald-500 text-white' : 'bg-gray-100 hover:bg-emerald-100'}`}>{m.date}</button>))}</div></div>
-              <div><p className="text-sm font-medium text-gray-600 mb-2">👥 Group</p><div className="flex gap-2 overflow-x-auto">{groups.map((g, idx) => (<button key={idx} onClick={() => setSelectedGroup(idx)} className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${selectedGroup === idx ? 'text-white' : 'bg-gray-100'}`} style={selectedGroup === idx ? { backgroundColor: g.color } : {}}>{g.name}</button>))}</div></div>
-            </div>
+            <GlassCard className="p-4">
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {meetings.map((m, idx) => (
+                  <button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedMeeting === idx ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg' : 'bg-gray-100 hover:bg-emerald-100'}`}>
+                    {idx === 0 && <span className="mr-1">🔥</span>}{m.date}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 overflow-x-auto mt-3">
+                {groups.map((g, idx) => (
+                  <button key={idx} onClick={() => setSelectedGroup(idx)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedGroup === idx ? 'text-white shadow-lg' : 'bg-gray-100 hover:opacity-80'}`} style={selectedGroup === idx ? { backgroundColor: g.color } : {}}>
+                    {g.name}
+                  </button>
+                ))}
+              </div>
+            </GlassCard>
+
             {(() => {
               const group = groups[selectedGroup];
               const beneficiary = getBeneficiary(selectedGroup, selectedMeeting);
               const stats = getGroupMeetingStats(selectedMeeting, selectedGroup);
               return (
                 <>
-                  <div className={`bg-gradient-to-r ${group.gradient} rounded-xl p-4 text-white shadow-lg`}>
-                    <div className="flex justify-between items-start">
+                  <div className={`bg-gradient-to-r ${group.gradient} rounded-2xl p-5 text-white shadow-xl relative overflow-hidden`}>
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
+                    <div className="relative flex justify-between items-start">
                       <div>
                         <p className="text-white/80 text-sm">{currentMeeting?.full}</p>
-                        <h2 className="text-xl font-bold">{group.name}</h2>
-                        <div className="mt-2 bg-white/20 rounded-lg px-3 py-2 inline-block">
-                          <p className="text-white/80 text-xs">⭐ BENEFICIARY</p>
-                          <p className="font-bold">{beneficiary.name}</p>
-                          {isAdmin && <button onClick={() => { setEditingBeneficiary({ meetingIdx: selectedMeeting, groupIdx: selectedGroup }); setShowBeneficiaryModal(true); }} className="text-xs text-white/80 underline mt-1">🔄 Change</button>}
+                        <h2 className="text-2xl font-bold">{group.name}</h2>
+                        <div className="mt-3 bg-white/20 backdrop-blur rounded-xl px-4 py-3 inline-block">
+                          <p className="text-white/80 text-xs mb-1">⭐ BENEFICIARY</p>
+                          <div className="flex items-center gap-3">
+                            <MemberAvatar name={beneficiary.name} photo={getMemberPhoto(selectedGroup, beneficiary.index)} size="md" color="#fff" />
+                            <div>
+                              <p className="font-bold text-lg">{beneficiary.name}</p>
+                              {isAdmin && <button onClick={() => { setEditingBeneficiary({ meetingIdx: selectedMeeting, groupIdx: selectedGroup }); setShowBeneficiaryModal(true); }} className="text-xs text-white/80 underline">🔄 Change</button>}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="bg-white/20 rounded-xl p-4 text-center">
+                      <div className="text-center bg-white/20 backdrop-blur rounded-xl p-4">
                         <p className="text-3xl font-bold">${stats.njangiCollected.toLocaleString()}</p>
                         <p className="text-white/80 text-sm">of ${stats.njangiTarget.toLocaleString()}</p>
+                        <div className="mt-2"><ProgressRing progress={stats.njangiPercentage} size={50} strokeWidth={5} color="#fff" /></div>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <table className="w-full">
-                      <thead><tr className="bg-gray-50"><th className="px-4 py-3 text-left text-sm">#</th><th className="px-4 py-3 text-left text-sm">Member</th><th className="px-4 py-3 text-center text-sm" style={{ color: group.color }}>$1,000</th></tr></thead>
-                      <tbody>
-                        {group.members.map((member, mIdx) => {
-                          const isPaid = njangiPayments[`${selectedMeeting}-${selectedGroup}-${mIdx}`];
-                          const isBeneficiary = mIdx === beneficiary.index;
-                          return (
-                            <tr key={mIdx} className={`border-b ${isBeneficiary ? 'bg-yellow-50' : isPaid ? 'bg-emerald-50' : ''}`}>
-                              <td className="px-4 py-3 text-gray-500">{mIdx + 1}</td>
-                              <td className="px-4 py-3"><span className="font-medium text-gray-800">{member}</span>{isBeneficiary && <span className="ml-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full">⭐</span>}</td>
-                              <td className="px-4 py-3 text-center">
-                                {isBeneficiary ? (
-                                  <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-lg text-sm font-bold">RECEIVES</span>
-                                ) : (
-                                  <button onClick={() => toggleNjangi(selectedMeeting, selectedGroup, mIdx)} disabled={!isAdmin} className={`w-24 py-2 rounded-lg font-bold text-sm ${isPaid ? 'text-white' : 'bg-gray-100 text-gray-600'} ${isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`} style={isPaid ? { backgroundColor: group.color } : {}}>{isPaid ? '✓ PAID' : '$1,000'}</button>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+
+                  <GlassCard className="overflow-hidden shadow-lg">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-4 py-3 text-left text-sm">#</th>
+                            <th className="px-4 py-3 text-left text-sm">Member</th>
+                            <th className="px-4 py-3 text-center text-sm" style={{ color: group.color }}>$1,000</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.members.map((member, mIdx) => {
+                            const isPaid = njangiPayments[`${selectedMeeting}-${selectedGroup}-${mIdx}`];
+                            const isBeneficiary = mIdx === beneficiary.index;
+                            return (
+                              <tr key={mIdx} className={`border-b transition-all ${isBeneficiary ? 'bg-gradient-to-r from-yellow-50 to-amber-50' : isPaid ? 'bg-emerald-50' : 'hover:bg-gray-50'}`}>
+                                <td className="px-4 py-3 text-gray-500">{mIdx + 1}</td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => openMemberModal(selectedGroup, mIdx)}>
+                                    <MemberAvatar name={member} photo={getMemberPhoto(selectedGroup, mIdx)} size="sm" color={group.color} isAdmin={isAdmin} />
+                                    <div>
+                                      <span className="font-medium text-gray-800">{member}</span>
+                                      {isBeneficiary && <span className="ml-2 bg-gradient-to-r from-yellow-400 to-amber-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full">⭐ BENEFICIARY</span>}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  {isBeneficiary ? (
+                                    <span className="bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 px-4 py-2 rounded-xl text-sm font-bold inline-block shine">💎 RECEIVES</span>
+                                  ) : (
+                                    <button onClick={() => toggleNjangi(selectedMeeting, selectedGroup, mIdx)} disabled={!isAdmin} className={`w-24 py-2 rounded-xl font-bold text-sm transition-all hover:scale-105 ${isPaid ? 'text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'} ${!isAdmin && 'opacity-70 cursor-not-allowed'}`} style={isPaid ? { backgroundColor: group.color } : {}}>
+                                      {isPaid ? '✓ PAID' : '$1,000'}
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </GlassCard>
                 </>
               );
             })()}
@@ -885,35 +1757,55 @@ export default function NikomNiMankon() {
         {/* Savings Tab */}
         {activeTab === 'savings' && (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-lg p-4">
-              <p className="text-sm font-medium text-gray-600 mb-2">📅 Meeting</p>
-              <div className="flex gap-2 overflow-x-auto pb-2">{meetings.map((m, idx) => (<button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${selectedMeeting === idx ? 'bg-purple-500 text-white' : 'bg-gray-100 hover:bg-purple-100'}`}>{m.date}</button>))}</div>
-            </div>
-            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl p-4 text-white shadow-lg">
-              <div className="flex justify-between items-start">
-                <div><p className="text-purple-100 text-sm">{currentMeeting?.full}</p><h2 className="text-xl font-bold">🏦 Savings Fund ($100/member)</h2></div>
-                <div className="bg-white/20 rounded-xl p-4 text-center"><p className="text-3xl font-bold">${savingsStats.collected.toLocaleString()}</p><p className="text-purple-100 text-sm">of ${savingsStats.target.toLocaleString()}</p></div>
+            <GlassCard className="p-4">
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {meetings.map((m, idx) => (<button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedMeeting === idx ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg' : 'bg-gray-100 hover:bg-purple-100'}`}>{m.date}</button>))}
               </div>
-              {isAdmin && <div className="mt-4 bg-red-500/30 border border-red-300 rounded-lg p-3"><p className="text-xs text-red-200 mb-1">🔒 CONFIDENTIAL</p><p className="text-2xl font-bold">Total: ${overallStats.totalSavingsCollected.toLocaleString()}</p></div>}
+            </GlassCard>
+            <div className="bg-gradient-to-r from-purple-500 via-violet-500 to-indigo-600 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
+              <div className="relative flex justify-between items-start">
+                <div>
+                  <p className="text-purple-100 text-sm">{currentMeeting?.full}</p>
+                  <h2 className="text-2xl font-bold">🏦 Savings Fund</h2>
+                  <p className="text-purple-200 text-sm mt-1">$100 per member</p>
+                </div>
+                <div className="text-center bg-white/20 backdrop-blur rounded-xl p-4">
+                  <p className="text-3xl font-bold">${savingsStats.collected.toLocaleString()}</p>
+                  <p className="text-purple-100 text-sm">of ${savingsStats.target.toLocaleString()}</p>
+                </div>
+              </div>
+              {isAdmin && (
+                <div className="mt-4 bg-red-500/30 border border-red-300 rounded-xl p-3 backdrop-blur">
+                  <p className="text-xs text-red-200 mb-1">🔒 CONFIDENTIAL - Admin Only</p>
+                  <p className="text-2xl font-bold">Total Savings: ${overallStats.totalSavingsCollected.toLocaleString()}</p>
+                </div>
+              )}
             </div>
-            <div className="bg-white rounded-xl shadow-lg p-4">
-              <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 mb-4 text-sm" />
+            <GlassCard className="p-4 shadow-lg">
+              <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none mb-4 transition-all" />
               <div className="space-y-3">
                 {groups.map((group, gIdx) => {
                   const filteredMembers = group.members.filter(m => !searchTerm || m.toLowerCase().includes(searchTerm.toLowerCase()));
                   if (filteredMembers.length === 0) return null;
                   const paidCount = group.members.filter((_, mIdx) => savingsFundPayments[`${selectedMeeting}-${gIdx}-${mIdx}`]).length;
                   return (
-                    <div key={gIdx} className="border rounded-lg overflow-hidden">
-                      <div className="p-2 flex items-center justify-between" style={{ backgroundColor: group.color + '15' }}><span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span><span className="text-xs" style={{ color: group.color }}>{paidCount}/{group.members.length}</span></div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-2">
+                    <div key={gIdx} className="rounded-xl overflow-hidden border">
+                      <div className="p-3 flex items-center justify-between" style={{ backgroundColor: group.color + '15' }}>
+                        <span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span>
+                        <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: group.color + '20', color: group.color }}>{paidCount}/{group.members.length}</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3">
                         {filteredMembers.map((member) => {
                           const actualIdx = group.members.indexOf(member);
                           const isPaid = savingsFundPayments[`${selectedMeeting}-${gIdx}-${actualIdx}`];
                           return (
-                            <div key={member} className={`flex items-center justify-between p-2 rounded-lg text-sm ${isPaid ? 'bg-purple-50' : 'bg-gray-50'}`}>
-                              <span className="font-medium text-gray-800 truncate">{member}</span>
-                              <button onClick={() => toggleSavingsFund(selectedMeeting, gIdx, actualIdx)} disabled={!isAdmin} className={`px-3 py-1 rounded text-xs font-bold ${isPaid ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} ${isAdmin ? '' : 'cursor-not-allowed'}`}>{isPaid ? '✓' : '$100'}</button>
+                            <div key={member} className={`flex items-center justify-between p-3 rounded-xl text-sm transition-all ${isPaid ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                              <div className="flex items-center gap-2">
+                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} onClick={() => openMemberModal(gIdx, actualIdx)} isAdmin={isAdmin} />
+                                <span className="font-medium text-gray-800 truncate">{member}</span>
+                              </div>
+                              <button onClick={() => toggleSavingsFund(selectedMeeting, gIdx, actualIdx)} disabled={!isAdmin} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${isPaid ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} ${!isAdmin && 'cursor-not-allowed opacity-70'}`}>{isPaid ? '✓' : '$100'}</button>
                             </div>
                           );
                         })}
@@ -922,41 +1814,56 @@ export default function NikomNiMankon() {
                   );
                 })}
               </div>
-            </div>
+            </GlassCard>
           </div>
         )}
 
         {/* Host Fee Tab */}
         {activeTab === 'hostfee' && (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-lg p-4">
-              <p className="text-sm font-medium text-gray-600 mb-2">📅 Meeting</p>
-              <div className="flex gap-2 overflow-x-auto pb-2">{meetings.map((m, idx) => (<button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${selectedMeeting === idx ? 'bg-teal-500 text-white' : 'bg-gray-100 hover:bg-teal-100'}`}>{m.date}</button>))}</div>
-            </div>
-            <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl p-4 text-white shadow-lg">
-              <div className="flex justify-between items-start">
-                <div><p className="text-teal-100 text-sm">{currentMeeting?.full}</p><h2 className="text-xl font-bold">🍽️ Host/Food Fee ($20/member)</h2><p className="text-teal-200 text-sm mt-1">Host: {currentMeeting?.host}</p></div>
-                <div className="bg-white/20 rounded-xl p-4 text-center"><p className="text-3xl font-bold">${hostFeeStats.collected.toLocaleString()}</p><p className="text-teal-100 text-sm">of ${hostFeeStats.target.toLocaleString()}</p></div>
+            <GlassCard className="p-4">
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {meetings.map((m, idx) => (<button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedMeeting === idx ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg' : 'bg-gray-100 hover:bg-teal-100'}`}>{m.date}</button>))}
+              </div>
+            </GlassCard>
+            <div className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
+              <div className="relative flex justify-between items-start">
+                <div>
+                  <p className="text-teal-100 text-sm">{currentMeeting?.full}</p>
+                  <h2 className="text-2xl font-bold">🍽️ Host/Food Fee</h2>
+                  <p className="text-teal-200 text-sm mt-1">Host: {currentMeeting?.host}</p>
+                </div>
+                <div className="text-center bg-white/20 backdrop-blur rounded-xl p-4">
+                  <p className="text-3xl font-bold">${hostFeeStats.collected.toLocaleString()}</p>
+                  <p className="text-teal-100 text-sm">of ${hostFeeStats.target.toLocaleString()}</p>
+                </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl shadow-lg p-4">
-              <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 mb-4 text-sm" />
+            <GlassCard className="p-4 shadow-lg">
+              <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none mb-4 transition-all" />
               <div className="space-y-3">
                 {groups.map((group, gIdx) => {
                   const filteredMembers = group.members.filter(m => !searchTerm || m.toLowerCase().includes(searchTerm.toLowerCase()));
                   if (filteredMembers.length === 0) return null;
                   const paidCount = group.members.filter((_, mIdx) => hostFeePayments[`${selectedMeeting}-${gIdx}-${mIdx}`]).length;
                   return (
-                    <div key={gIdx} className="border rounded-lg overflow-hidden">
-                      <div className="p-2 flex items-center justify-between" style={{ backgroundColor: group.color + '15' }}><span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span><span className="text-xs" style={{ color: group.color }}>{paidCount}/{group.members.length}</span></div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-2">
+                    <div key={gIdx} className="rounded-xl overflow-hidden border">
+                      <div className="p-3 flex items-center justify-between" style={{ backgroundColor: group.color + '15' }}>
+                        <span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span>
+                        <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: group.color + '20', color: group.color }}>{paidCount}/{group.members.length}</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3">
                         {filteredMembers.map((member) => {
                           const actualIdx = group.members.indexOf(member);
                           const isPaid = hostFeePayments[`${selectedMeeting}-${gIdx}-${actualIdx}`];
                           return (
-                            <div key={member} className={`flex items-center justify-between p-2 rounded-lg text-sm ${isPaid ? 'bg-teal-50' : 'bg-gray-50'}`}>
-                              <span className="font-medium text-gray-800 truncate">{member}</span>
-                              <button onClick={() => toggleHostFee(selectedMeeting, gIdx, actualIdx)} disabled={!isAdmin} className={`px-3 py-1 rounded text-xs font-bold ${isPaid ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-600'} ${isAdmin ? '' : 'cursor-not-allowed'}`}>{isPaid ? '✓' : '$20'}</button>
+                            <div key={member} className={`flex items-center justify-between p-3 rounded-xl text-sm transition-all ${isPaid ? 'bg-teal-50 border border-teal-200' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                              <div className="flex items-center gap-2">
+                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} onClick={() => openMemberModal(gIdx, actualIdx)} isAdmin={isAdmin} />
+                                <span className="font-medium text-gray-800 truncate">{member}</span>
+                              </div>
+                              <button onClick={() => toggleHostFee(selectedMeeting, gIdx, actualIdx)} disabled={!isAdmin} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${isPaid ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-600'} ${!isAdmin && 'cursor-not-allowed opacity-70'}`}>{isPaid ? '✓' : '$20'}</button>
                             </div>
                           );
                         })}
@@ -965,41 +1872,56 @@ export default function NikomNiMankon() {
                   );
                 })}
               </div>
-            </div>
+            </GlassCard>
           </div>
         )}
 
         {/* Attendance Tab */}
         {activeTab === 'attendance' && (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-lg p-4">
-              <p className="text-sm font-medium text-gray-600 mb-2">📅 Meeting</p>
-              <div className="flex gap-2 overflow-x-auto pb-2">{meetings.map((m, idx) => (<button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${selectedMeeting === idx ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-blue-100'}`}>{m.date}</button>))}</div>
-            </div>
-            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl p-4 text-white shadow-lg">
-              <div className="flex justify-between items-start">
-                <div><p className="text-blue-100 text-sm">{currentMeeting?.full}</p><h2 className="text-xl font-bold">✋ Attendance</h2></div>
-                <div className="bg-white/20 rounded-xl p-4 text-center"><p className="text-3xl font-bold">{attendanceStats.present}/{attendanceStats.total}</p><p className="text-blue-100 text-sm">{attendanceStats.percentage}% present</p></div>
+            <GlassCard className="p-4">
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {meetings.map((m, idx) => (<button key={idx} onClick={() => setSelectedMeeting(idx)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedMeeting === idx ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg' : 'bg-gray-100 hover:bg-blue-100'}`}>{m.date}</button>))}
+              </div>
+            </GlassCard>
+            <div className="bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
+              <div className="relative flex justify-between items-start">
+                <div>
+                  <p className="text-blue-100 text-sm">{currentMeeting?.full}</p>
+                  <h2 className="text-2xl font-bold">✋ Attendance</h2>
+                  <p className="text-blue-200 text-sm mt-1">Track who's present</p>
+                </div>
+                <div className="text-center bg-white/20 backdrop-blur rounded-xl p-4">
+                  <p className="text-3xl font-bold">{attendanceStats.present}/{attendanceStats.total}</p>
+                  <p className="text-blue-100 text-sm">{attendanceStats.percentage}% present</p>
+                </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl shadow-lg p-4">
-              <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 mb-4 text-sm" />
+            <GlassCard className="p-4 shadow-lg">
+              <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none mb-4 transition-all" />
               <div className="space-y-3">
                 {groups.map((group, gIdx) => {
                   const filteredMembers = group.members.filter(m => !searchTerm || m.toLowerCase().includes(searchTerm.toLowerCase()));
                   if (filteredMembers.length === 0) return null;
                   const presentCount = group.members.filter((_, mIdx) => attendance[`${selectedMeeting}-${gIdx}-${mIdx}`]).length;
                   return (
-                    <div key={gIdx} className="border rounded-lg overflow-hidden">
-                      <div className="p-2 flex items-center justify-between" style={{ backgroundColor: group.color + '15' }}><span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span><span className="text-xs" style={{ color: group.color }}>{presentCount}/{group.members.length} present</span></div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-2">
+                    <div key={gIdx} className="rounded-xl overflow-hidden border">
+                      <div className="p-3 flex items-center justify-between" style={{ backgroundColor: group.color + '15' }}>
+                        <span className="font-bold text-sm" style={{ color: group.color }}>{group.name}</span>
+                        <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: group.color + '20', color: group.color }}>{presentCount}/{group.members.length} present</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3">
                         {filteredMembers.map((member) => {
                           const actualIdx = group.members.indexOf(member);
                           const isPresent = attendance[`${selectedMeeting}-${gIdx}-${actualIdx}`];
                           return (
-                            <div key={member} className={`flex items-center justify-between p-2 rounded-lg text-sm ${isPresent ? 'bg-blue-50' : 'bg-gray-50'}`}>
-                              <span className="font-medium text-gray-800 truncate">{member}</span>
-                              <button onClick={() => toggleAttendance(selectedMeeting, gIdx, actualIdx)} disabled={!isAdmin} className={`px-3 py-1 rounded text-xs font-bold ${isPresent ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'} ${isAdmin ? '' : 'cursor-not-allowed'}`}>{isPresent ? '✓ Present' : 'Absent'}</button>
+                            <div key={member} className={`flex items-center justify-between p-3 rounded-xl text-sm transition-all ${isPresent ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                              <div className="flex items-center gap-2">
+                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="sm" color={group.color} onClick={() => openMemberModal(gIdx, actualIdx)} isAdmin={isAdmin} />
+                                <span className="font-medium text-gray-800 truncate">{member}</span>
+                              </div>
+                              <button onClick={() => toggleAttendance(selectedMeeting, gIdx, actualIdx)} disabled={!isAdmin} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${isPresent ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'} ${!isAdmin && 'cursor-not-allowed opacity-70'}`}>{isPresent ? '✓ Present' : 'Absent'}</button>
                             </div>
                           );
                         })}
@@ -1008,7 +1930,7 @@ export default function NikomNiMankon() {
                   );
                 })}
               </div>
-            </div>
+            </GlassCard>
           </div>
         )}
 
@@ -1019,39 +1941,38 @@ export default function NikomNiMankon() {
               const hStats = getMeetingHostFeeStats(idx);
               const aStats = getMeetingAttendanceStats(idx);
               return (
-                <div key={idx} className={`bg-white rounded-xl shadow-lg overflow-hidden ${idx === 0 ? 'ring-2 ring-emerald-400' : ''}`}>
-                  <div className={`p-3 flex items-center justify-between ${idx === 0 ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white' : 'bg-gray-50'}`}>
+                <GlassCard key={idx} className={`overflow-hidden shadow-lg transition-all hover:-translate-y-1 ${idx === 0 ? 'ring-2 ring-emerald-400 ring-offset-2' : ''}`}>
+                  <div className={`p-4 flex items-center justify-between ${idx === 0 ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : 'bg-gray-50'}`}>
                     <div>
                       <span className={`text-xs font-bold ${idx === 0 ? 'text-emerald-100' : 'text-gray-500'}`}>Meeting #{idx + 1}</span>
-                      <p className={`font-bold ${idx === 0 ? 'text-white' : 'text-gray-800'}`}>{meeting.full}</p>
+                      <p className={`font-bold text-lg ${idx === 0 ? 'text-white' : 'text-gray-800'}`}>{meeting.full}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {isAdmin && <button onClick={() => { setEditingNotes({ meetingIdx: idx, note: meetingNotes[idx] || '' }); setShowNotesModal(true); }} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">📝</button>}
-                      {idx === 0 && <span className="bg-white text-emerald-600 text-xs font-bold px-3 py-1 rounded-full">NEXT</span>}
-                    </div>
+                    {idx === 0 && <span className="bg-white text-emerald-600 text-xs font-bold px-3 py-1 rounded-full animate-pulse">🔥 NEXT</span>}
                   </div>
-                  <div className="p-3">
-                    <p className="text-sm text-gray-600 mb-2">🏠 {meeting.host} • {meeting.city}</p>
-                    {meetingNotes[idx] && <p className="text-xs text-gray-500 mb-2 bg-yellow-50 p-2 rounded">📝 {meetingNotes[idx]}</p>}
+                  <div className="p-4">
+                    <p className="text-sm text-gray-600 mb-3">🏠 {meeting.host} • 📍 {meeting.city}</p>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                       {groups.map((group, gIdx) => {
                         const beneficiary = getBeneficiary(gIdx, idx);
                         const stats = getGroupMeetingStats(idx, gIdx);
                         return (
-                          <div key={gIdx} className="p-2 rounded-lg border text-sm" style={{ borderColor: group.color + '50' }}>
-                            <p className="text-xs font-bold truncate" style={{ color: group.color }}>{group.name}</p>
-                            <p className="font-medium text-gray-800 truncate text-xs">{beneficiary.name}</p>
-                            <div className="bg-gray-200 rounded-full h-1.5 mt-1"><div className="h-full rounded-full" style={{ width: `${stats.njangiPercentage}%`, backgroundColor: group.color }}/></div>
+                          <div key={gIdx} className="p-3 rounded-xl border text-sm transition-all hover:shadow-md" style={{ borderColor: group.color + '50' }}>
+                            <p className="text-xs font-bold truncate mb-2" style={{ color: group.color }}>{group.name}</p>
+                            <div className="flex items-center gap-2">
+                              <MemberAvatar name={beneficiary.name} photo={getMemberPhoto(gIdx, beneficiary.index)} size="sm" color={group.color} />
+                              <p className="font-medium text-gray-800 truncate text-xs flex-1">{beneficiary.name.split(' ')[0]}</p>
+                            </div>
+                            <div className="mt-2"><ProgressRing progress={stats.njangiPercentage} size={40} strokeWidth={4} color={group.color} /></div>
                           </div>
                         );
                       })}
                     </div>
-                    <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-gray-500">
-                      <span>🍽️ {hStats.paid}/{hStats.total} paid</span>
-                      <span>✋ {aStats.present}/{aStats.total}</span>
+                    <div className="mt-3 pt-3 border-t flex items-center justify-between text-xs text-gray-500">
+                      <span>🍽️ {hStats.paid}/{hStats.total} host fee</span>
+                      <span>✋ {aStats.present}/{aStats.total} attendance</span>
                     </div>
                   </div>
-                </div>
+                </GlassCard>
               );
             })}
           </div>
@@ -1059,93 +1980,119 @@ export default function NikomNiMankon() {
 
         {/* Members Tab */}
         {activeTab === 'members' && (
-          <div className="bg-white rounded-xl shadow-lg p-4">
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-              <h3 className="font-bold text-gray-800">👥 All {totalMembers} Members</h3>
-              <div className="flex gap-2">
-                {isAdmin && <button onClick={() => setShowAddMemberModal(true)} className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-medium">➕ Add</button>}
-                <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 rounded-lg border-2 border-gray-200 text-sm w-48" />
+          <div className="space-y-4">
+            <GlassCard className="p-4 shadow-lg">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <h3 className="font-bold text-gray-800 text-lg">👥 All {totalMembers} Members</h3>
+                <div className="flex gap-2">
+                  {isAdmin && <button onClick={() => setShowAddMemberModal(true)} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-lg transition-all hover:scale-105">➕ Add Member</button>}
+                  <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:outline-none text-sm w-48 transition-all" />
+                </div>
               </div>
-            </div>
-            <div className="space-y-4">
-              {groups.map((group, gIdx) => {
-                const filteredMembers = group.members.filter(m => !searchTerm || m.toLowerCase().includes(searchTerm.toLowerCase()));
-                if (filteredMembers.length === 0 && searchTerm) return null;
-                return (
-                  <div key={gIdx} className="border rounded-xl overflow-hidden">
-                    <div className="p-3 flex items-center justify-between" style={{ backgroundColor: group.color, color: 'white' }}>
-                      <span className="font-bold">{group.name}</span>
-                      <span className="text-sm opacity-80">{group.members.length} members</span>
-                    </div>
-                    <div className="p-3">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {(searchTerm ? filteredMembers : group.members).map((member, mIdx) => {
-                          const actualIdx = group.members.indexOf(member);
-                          return (
-                            <div key={actualIdx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: group.color }}>{actualIdx + 1}</div>
-                                <span className="font-medium text-gray-800 text-sm">{member}</span>
+              <div className="space-y-4">
+                {groups.map((group, gIdx) => {
+                  const filteredMembers = group.members.filter(m => !searchTerm || m.toLowerCase().includes(searchTerm.toLowerCase()));
+                  if (filteredMembers.length === 0 && searchTerm) return null;
+                  return (
+                    <div key={gIdx} className="rounded-xl overflow-hidden border-2" style={{ borderColor: group.color + '30' }}>
+                      <div className="p-3 flex items-center justify-between" style={{ backgroundColor: group.color, color: 'white' }}>
+                        <span className="font-bold">{group.name}</span>
+                        <span className="text-sm bg-white/20 px-2 py-0.5 rounded-full">{group.members.length} members</span>
+                      </div>
+                      <div className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {(searchTerm ? filteredMembers : group.members).map((member, mIdx) => {
+                            const actualIdx = group.members.indexOf(member);
+                            return (
+                              <div key={actualIdx} onClick={() => openMemberModal(gIdx, actualIdx)} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5">
+                                <MemberAvatar name={member} photo={getMemberPhoto(gIdx, actualIdx)} size="md" color={group.color} isAdmin={isAdmin} />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-800 truncate">{member}</p>
+                                  <p className="text-xs text-gray-500">Tap to view details</p>
+                                </div>
                               </div>
-                              {isAdmin && <button onClick={() => { setEditingMember({ groupIdx: gIdx, memberIdx: actualIdx, name: member }); setShowEditMemberModal(true); }} className="text-gray-400 hover:text-blue-500">✏️</button>}
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </GlassCard>
           </div>
         )}
 
         {/* WhatsApp Tab */}
         {activeTab === 'whatsapp' && (
           <div className="space-y-6">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white">
-              <h2 className="text-2xl font-bold">📱 WhatsApp</h2>
-              <p className="text-green-100 mt-2">Generate and share updates</p>
+            <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
+              <div className="relative">
+                <h2 className="text-3xl font-bold">📱 WhatsApp</h2>
+                <p className="text-green-100 mt-2">Share updates with the community</p>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white rounded-xl shadow-lg p-5">
-                <h3 className="font-bold text-gray-800 mb-3">📊 Full Summary</h3>
-                <select onChange={(e) => setSelectedMeeting(parseInt(e.target.value))} value={selectedMeeting} className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 mb-3">
+              <GlassCard className="p-6 shadow-lg hover:shadow-xl transition-all">
+                <div className="text-center mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                    <span className="text-3xl">📊</span>
+                  </div>
+                  <h3 className="font-bold text-gray-800 text-lg">Full Summary</h3>
+                  <p className="text-gray-500 text-sm">Complete payment status</p>
+                </div>
+                <select onChange={(e) => setSelectedMeeting(parseInt(e.target.value))} value={selectedMeeting} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4">
                   {meetings.map((m, idx) => (<option key={idx} value={idx}>#{idx + 1}: {m.full}</option>))}
                 </select>
-                <button onClick={() => openWhatsAppWithOptions('summary')} className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold">📱 Generate</button>
-              </div>
-              <div className="bg-white rounded-xl shadow-lg p-5">
-                <h3 className="font-bold text-gray-800 mb-3">🔔 Reminder</h3>
-                <select onChange={(e) => setSelectedMeeting(parseInt(e.target.value))} value={selectedMeeting} className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 mb-3">
+                <button onClick={() => openWhatsApp('summary')} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all hover:scale-105">📱 Generate Summary</button>
+              </GlassCard>
+              <GlassCard className="p-6 shadow-lg hover:shadow-xl transition-all">
+                <div className="text-center mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                    <span className="text-3xl">🔔</span>
+                  </div>
+                  <h3 className="font-bold text-gray-800 text-lg">Meeting Reminder</h3>
+                  <p className="text-gray-500 text-sm">Remind members about upcoming meeting</p>
+                </div>
+                <select onChange={(e) => setSelectedMeeting(parseInt(e.target.value))} value={selectedMeeting} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 mb-4">
                   {meetings.map((m, idx) => (<option key={idx} value={idx}>#{idx + 1}: {m.full}</option>))}
                 </select>
-                <button onClick={() => openWhatsAppWithOptions('reminder')} className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-bold">📱 Generate</button>
-              </div>
+                <button onClick={() => openWhatsApp('reminder')} className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all hover:scale-105">📱 Generate Reminder</button>
+              </GlassCard>
             </div>
           </div>
         )}
 
         {/* Rules Tab */}
         {activeTab === 'rules' && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {rules.map((rule, idx) => (
-                <div key={idx} className="bg-white rounded-xl p-4 shadow-lg border-l-4 border-emerald-500">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">{rule.icon}</span>
-                    <div><h3 className="font-bold text-gray-800">{rule.title}</h3><p className="text-gray-600 text-sm">{rule.text}</p></div>
+                <GlassCard key={idx} className="p-5 shadow-lg border-l-4 border-emerald-500 hover:shadow-xl transition-all hover:-translate-y-1">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center text-2xl shadow-lg flex-shrink-0">{rule.icon}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-gray-800">{rule.title}</h3>
+                        {rule.amount && <span className="text-emerald-600 font-bold">{rule.amount}</span>}
+                      </div>
+                      <p className="text-gray-600 text-sm mt-1">{rule.text}</p>
+                    </div>
                   </div>
-                </div>
+                </GlassCard>
               ))}
             </div>
-            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-5 text-white">
-              <h3 className="font-bold text-lg mb-4">💰 Per Meeting</h3>
+            <div className="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 rounded-2xl p-6 text-white shadow-xl">
+              <h3 className="font-bold text-xl mb-4 text-center">💰 Per Meeting Breakdown</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="bg-white/20 rounded-lg p-3"><p className="text-2xl font-bold">$1,000</p><p className="text-sm">Njangi</p></div>
-                <div className="bg-white/20 rounded-lg p-3"><p className="text-2xl font-bold">$100</p><p className="text-sm">Savings</p></div>
-                <div className="bg-white/20 rounded-lg p-3"><p className="text-2xl font-bold">$20</p><p className="text-sm">Host Fee</p></div>
-                <div className="bg-white/20 rounded-lg p-3"><p className="text-2xl font-bold">$1,120</p><p className="text-sm">TOTAL</p></div>
+                {[{amount: '$1,000', label: 'Njangi', icon: '💰'}, {amount: '$100', label: 'Savings', icon: '🏦'}, {amount: '$20', label: 'Host Fee', icon: '🍽️'}, {amount: '$1,120', label: 'TOTAL', icon: '💎'}].map((item, i) => (
+                  <div key={i} className="bg-white/20 backdrop-blur rounded-xl p-4 hover:bg-white/30 transition-all">
+                    <span className="text-2xl">{item.icon}</span>
+                    <p className="text-2xl font-bold mt-2">{item.amount}</p>
+                    <p className="text-emerald-100 text-sm">{item.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -1153,25 +2100,38 @@ export default function NikomNiMankon() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-emerald-800 text-white py-6 mt-8">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="font-bold">🌴 Nikom Ni Mankon 🌴</p>
-          <p className="text-emerald-300 text-sm">Maryland, USA • Growing Together</p>
-          <div className="mt-4 flex flex-col items-center gap-2">
-            <p className="text-emerald-400 text-xs">Built by</p>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-xl px-4 py-2">
-              <svg width="36" height="36" viewBox="0 0 100 100">
+      <footer className="bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 text-white py-8 mt-8 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.4"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
+        <div className="max-w-7xl mx-auto px-4 text-center relative">
+          <div className="flex justify-center mb-4">
+            <RaffiaPalmSVG className="w-16 h-24 opacity-80" />
+          </div>
+          <p className="font-bold text-2xl">🌴 Nikom Ni Mankon 🌴</p>
+          <p className="text-emerald-300 text-sm mt-1">Maryland, USA • Growing Together Since 2026</p>
+          
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <p className="text-emerald-400 text-xs uppercase tracking-wider">Built by</p>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl px-6 py-3 border border-white/20 shadow-xl hover:bg-white/20 transition-all">
+              <svg width="48" height="48" viewBox="0 0 100 100" className="shadow-lg rounded-xl">
                 <rect x="5" y="5" width="90" height="90" rx="18" fill="#10B981"/>
                 <text x="50" y="62" fontFamily="Arial Black, sans-serif" fontSize="36" fontWeight="900" fill="white" textAnchor="middle">TA</text>
               </svg>
               <div className="flex flex-col items-start">
-                <span className="font-bold text-white text-sm leading-tight">TECH</span>
-                <span className="text-gray-300 text-sm leading-tight">SOLUTIONS</span>
+                <span className="font-bold text-white text-lg leading-tight">TECH</span>
+                <span className="text-emerald-300 text-lg leading-tight">SOLUTIONS</span>
               </div>
             </div>
-            <a href="tel:+15714472698" className="text-emerald-300 text-xs hover:text-white transition-colors">📞 (571) 447-2698</a>
+            <a href="tel:+15714472698" className="flex items-center gap-2 text-emerald-300 hover:text-white transition-all text-sm group">
+              <span className="bg-emerald-500/30 group-hover:bg-emerald-500/50 px-3 py-1.5 rounded-full transition-all">📞 (571) 447-2698</span>
+            </a>
           </div>
-          <p className="text-emerald-400 text-xs mt-3">🇨🇲 × 🇺🇸</p>
+          
+          <div className="mt-6 pt-6 border-t border-emerald-700/50 flex items-center justify-center gap-4 text-emerald-400 text-xs">
+            <span>🇨🇲 Cameroon</span>
+            <span>×</span>
+            <span>🇺🇸 USA</span>
+          </div>
+          <p className="text-emerald-500/50 text-xs mt-4">© 2026 TA-TECHSOLUTIONS. All rights reserved.</p>
         </div>
       </footer>
     </div>
